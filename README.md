@@ -104,6 +104,17 @@ A modernized, high-performance home screen combining the clean minimalism of App
 | **Oversized Clock & Date Typography** | Clean typography in [Outfit](https://fonts.google.com/specimen/Outfit), enlarged for effortless 10-foot legibility, with a matching drifting Clock screensaver. |
 | **Themes and module cards** | Themes change colors, wallpaper, dock and columns without a rebuild, and module cards let other apps plug a tile in, only with your say-so. |
 
+### Modern UI Showcase (Captured Live from TV)
+
+| | |
+|---|---|
+| ![Modern Redesigned Home with Equidistant Dock Band](docs/modern-home-equidistant.png) | ![Top Control Center with Inputs and Quick Actions](docs/modern-topbar-controls.png) |
+| *Modern Home Screen: Oversized clock, top control center & equidistant dock* | *Top Bar Controls: Inputs, Reorder, AirPlay/Cast, Wi-Fi & Settings* |
+| ![In-App Live Wi-Fi Scanner and Network Switcher](docs/modern-wifi-scanner.png) | ![AirPlay & Screen Cast Receiver Controls](docs/modern-cast-airplay.png) |
+| *Live Wi-Fi Scanner: Real-time scan of nearby networks with signal & security* | *AirPlay & Screen Cast: Quick access to wireless display receiver* |
+| ![Minimalist Settings Gear Popup](docs/modern-settings-modal.png) | ![Visual Tile Reorder Mode](docs/modern-reorder-mode.png) |
+| *Streamlined Settings: Launcher settings & Native TV system settings* | *Tile Reorder Mode: Visual D-pad tile rearranging with drag-and-drop* |
+
 And a TV that stops working against you: no sponsored rows, no "Discover" nags, no analytics
 phoning home, no apps you never asked for.
 

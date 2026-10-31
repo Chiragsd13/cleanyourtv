@@ -22,6 +22,17 @@ The launcher combines the best aspects of Apple tvOS and Samsung One UI:
 - **Persistent Launcher Interception**: `HomeKeyService` Accessibility Service intercepts Home key and navigation events to ensure the launcher remains the default home screen without falling back to stock OEM launchers (Amazon Fire TV, Google TV, Android TV).
 - **Smooth 60+ FPS Spring Physics & Glass Highlight**: Floating focus highlight with spring animation interpolators and GPU-accelerated transforms.
 
+### Visual Reference (Live Hardware Screenshots)
+
+| | |
+|---|---|
+| ![Modern Redesigned Home Screen](modern-home-equidistant.png) | ![Top Control Center](modern-topbar-controls.png) |
+| *Equidistant Dock Band & Oversized Typography* | *Top Control Bar (Inputs, Reorder, Cast, Wi-Fi, Settings)* |
+| ![Live Wi-Fi Scanner Modal](modern-wifi-scanner.png) | ![AirPlay & Cast Receiver](modern-cast-airplay.png) |
+| *Live In-App Wi-Fi Scanner & Network Switcher* | *AirPlay & Wireless Screen Cast Controls* |
+| ![Minimalist Settings Gear Popup](modern-settings-modal.png) | ![Visual Tile Reorder Mode](modern-reorder-mode.png) |
+| *Minimal Settings Modal (Launcher + Native)* | *Visual D-Pad Tile Reorder Mode* |
+
 ---
 
 ## 2. Codebase Organization
