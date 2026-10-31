@@ -17,9 +17,15 @@ The **TV** needs Android 8.0 (API 26) or newer: `minSdk` is a compile-time floor
 
 ## Build it yourself
 
-It needs JDK 17 and Android SDK platform 34. On macOS: `brew install openjdk@17 android-commandlinetools`
-and `sdkmanager "platforms;android-34" "build-tools;34.0.0"`. On Linux the install script finds
-`~/Android/Sdk` and the `java` on your PATH.
+It needs JDK 17 and Android SDK platform 34. For comprehensive build instructions, ADB deployment, test suites, and hardware verification workflows, see the [Developer Guide](DEVELOPMENT.md). On macOS: `brew install openjdk@17 android-commandlinetools`
+and `sdkmanager "platforms;android-34" "build-tools;34.0.0"`. On Windows or Linux, ensure `JAVA_HOME` and `ANDROID_HOME` are set, then run `./gradlew assembleRelease` inside `launcher/`.
+
+## Modern Hybrid UI Features
+
+- **Equidistant Adaptive Dock**: Glass band with strictly uniform 14dp padding across all four sides (top, bottom, left, right) and concentric rounded corners (`radiusPx(cardRadius, pad)`). The band dynamically bounds only the apps present in the dock.
+- **Top Control Bar**: Direct access buttons for **Inputs** (`btnInputs`), **Live Wi-Fi Scanner** (`btnWifi`), **AirPlay & Cast Receiver** (`btnCast`), **Tile Reorder** (`btnReorder`), and **Settings** (`btnSettings`).
+- **One UI 9 Now Bar**: Floating interactive media widget displaying currently playing media, artwork, live equalizer animation, track progress, and playback controls.
+- **Persistent Launcher Interception**: `HomeKeyService` Accessibility Service intercepts Home key and navigation presses, guaranteeing the custom launcher remains default without falling back to stock OEM launchers.
 
 ## Configure
 

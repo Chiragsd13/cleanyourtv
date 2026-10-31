@@ -271,9 +271,13 @@ set is in [Troubleshooting](docs/TROUBLESHOOTING.md).
 
 | What | How it works |
 |---|---|
+| **Equidistant Dock** | Frosted glass dock band with strictly uniform equidistant 14dp padding across all four sides, concentric corners (`radiusPx`), and dynamic auto-adaptation to visible apps. |
+| **Control Top Bar** | Dedicated control buttons for Inputs, In-App Live Wi-Fi Scanner (`btnWifi`), AirPlay & Cast receiver (`btnCast`), Reorder mode (`btnReorder`), and Gear Settings (`btnSettings`). |
+| **Now Bar (One UI 9)** | Floating interactive media playback pill with live equalizer animation, track details, album art, interactive media controls, and audio output selector. |
+| **Persistent Launcher** | `HomeKeyService` Accessibility Service intercepts Home key and navigation presses, guaranteeing the launcher remains default without stock OEM fallback. |
 | **Configure** | Dock order, hidden apps, Live TV app, 4 to 7 tiles per row, reduced motion. All in [`config.xml`](launcher/app/src/main/res/values/config.xml) |
-| **Settings on the TV** | Hold OK on Settings for launcher settings. Optional `launcher_settings_button` makes a normal click open them directly; TV settings remain on the settings page and their app tile. |
-| **Themes** | Background, wallpaper and layout from a `config.json` pushed over Wi-Fi, no rebuild. eleven ship in [`themes/`](themes/), the built-in `default/` included |
+| **Settings on the TV** | Minimalist gear popup gives instant access to Launcher settings and Native TV system settings. |
+| **Themes** | Background, wallpaper and layout from a `config.json` pushed over Wi-Fi, no rebuild. Eleven ship in [`themes/`](themes/), the built-in `default/` included |
 | **30 languages** | Follows the TV's language, with a fully mirrored right-to-left layout for Hebrew |
 | **App library** | Optional: browse every installed app and add or remove Home shortcuts. See [the app library guide](docs/app-library.md) |
 | **Tile menu** | Optional (`tile_menu`): hold OK on a tile for Move, Remove from Home and App info. Off, holding OK opens App info |
@@ -284,8 +288,7 @@ set is in [Troubleshooting](docs/TROUBLESHOOTING.md).
 
 Themes, switches and add-ons together, with screenshots: [cleanyour.tv/addons](https://cleanyour.tv/addons).
 
-**More:** [docs/launcher.md](docs/launcher.md) has the launcher settings page row by row, changing the
-default home, the languages, remote keys, the Clock screensaver, navigation and building it yourself.
+**More:** [docs/launcher.md](docs/launcher.md) has details on settings rows, RTL layout, remote key mappings, and custom module cards. For full building, unit testing, and hardware deployment workflows, see the [Developer Guide](docs/DEVELOPMENT.md).
 
 ## Restoring your TV
 
