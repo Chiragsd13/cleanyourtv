@@ -54,6 +54,8 @@ final class SystemSettings {
             amz.addCategory("android.intent.category.MAINSETTINGS");
             amz.addCategory(Intent.CATEGORY_DEFAULT);
             if (pm.resolveActivity(amz, 0) != null) return amz;
+            Intent directAmz = new Intent().setComponent(new ComponentName("com.amazon.tv.launcher", "com.amazon.tv.launcher.ui.MainSettingsActivity"));
+            if (pm.resolveActivity(directAmz, 0) != null) return directAmz;
         } catch (Exception ignored) {}
 
         // 2. Fire TV Settings v2

@@ -318,12 +318,21 @@ public class HomeKeyService extends AccessibilityService {
             openHome();
             return;
         }
-        // stock_home_redirect: instantly redirect any stock Amazon launcher window back to CleanYourTV
+        // stock_home_redirect: redirect stock Amazon launcher home screens back to CleanYourTV,
+        // but preserve native settings, search, dialogs, and secondary screens.
         CharSequence cls = event.getClassName();
         CharSequence pkg = event.getPackageName();
+        if (cls != null) {
+            String c = cls.toString();
+            if (c.contains("Setting") || c.contains("Settings") || c.contains("QuickSettings")
+                    || c.contains("Dialog") || c.contains("Search") || c.contains("Purchase")
+                    || c.contains("WebView")) {
+                return;
+            }
+        }
         if (pkg != null) {
             String p = pkg.toString();
-            if (p.startsWith("com.amazon.tv.launcher") || p.startsWith("com.amazon.firehomestarter") 
+            if (p.equals("com.amazon.tv.launcher") || p.equals("com.amazon.firehomestarter")
                     || p.equals(stockHomePackage) || stockHome.contains(p)) {
                 openHome();
                 return;
@@ -331,7 +340,7 @@ public class HomeKeyService extends AccessibilityService {
         }
         if (cls != null) {
             String c = cls.toString();
-            if (stockHome.contains(c) || c.contains("com.amazon.tv.launcher") || c.contains("com.amazon.firehomestarter")) {
+            if (stockHome.contains(c) || c.contains("HomeActivity") || c.contains("HomeStarterActivity")) {
                 openHome();
                 return;
             }

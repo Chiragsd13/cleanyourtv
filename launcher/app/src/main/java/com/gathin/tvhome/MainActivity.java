@@ -680,19 +680,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             if (singleRow && !cfg.alwaysShowNames) want += (int) (29 * density);
             if (grid.getPaddingTop() != want) {
                 grid.setPadding(grid.getPaddingLeft(), want, grid.getPaddingRight(), grid.getPaddingBottom());
-                // A vertical grid parks the dock on the new padding line by scrolling (onTileFocused); a sideways
-                // row cannot scroll vertically, and the layout request made from inside this layout pass is
-                // dropped, so lay the row out again on the next frame. The glass and the title were placed for the
-                // old position, so fit them again once it has moved.
-                if (singleRow) grid.post(() -> {
+                grid.post(() -> {
                     grid.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
                         @Override
                         public void onGlobalLayout() {
                             grid.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                            int pos = Math.max(0, Math.min(lastFocused, adapter.appCount() - 1));
-                            RecyclerView.ViewHolder vh = grid.findViewHolderForAdapterPosition(pos);
-                            View card = vh == null ? null : vh.itemView.findViewById(R.id.card);
-                            if (card != null && card.isFocused()) onTileFocused(pos, card);
+                            refitGlass();
                         }
                     });
                     grid.requestLayout();
@@ -1742,7 +1735,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         float w = card.getWidth() * scale + 2 * pad;
         float h = card.getHeight() * scale + 2 * pad;
         float x = r.exactCenterX() - w / 2f;
-        float y = r.exactCenterY() - h / 2f - (advancedEffects ? 4f * density : 0f);
+        boolean inDock = dockRow && position < COLUMNS;
+        float y = r.exactCenterY() - h / 2f - (advancedEffects && !inDock ? 4f * density : 0f);
 
         ViewGroup.LayoutParams lp = glass.getLayoutParams();
         if (lp.width != (int) w || lp.height != (int) h || card.getWidth() != glassCardW) {
@@ -1811,13 +1805,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         RecyclerView.ViewHolder vh = grid.findViewHolderForAdapterPosition(pos);
         View card = vh == null ? null : vh.itemView.findViewById(R.id.card);
         if (card == null || card.getWidth() <= 0 || !card.isFocused()) return;
-        float pad = 6f * density;
-        float scale = adapter.focusScale();
-        int w = (int) (card.getWidth() * scale + 2 * pad);
-        int h = (int) (card.getHeight() * scale + 2 * pad);
-        if (!glassShown || card.getWidth() != glassCardW || glass.getWidth() != w || glass.getHeight() != h) {
-            onTileFocused(pos, card);
-        }
+        onTileFocused(pos, card);
     }
 
     // ---- top shelf -------------------------------------------------------------------------------
@@ -3083,22 +3071,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         mirrorRow.findViewById(R.id.dot).setVisibility(View.GONE);
         mirrorRow.setOnClickListener(v -> {
             popup.dismiss();
-            Intent[] mirrorIntents = new Intent[] {
-                new Intent("android.settings.WIFI_DISPLAY_SETTINGS"),
-                new Intent("com.amazon.device.settings.action.DISPLAY_AND_SOUNDS"),
-                new Intent(Settings.ACTION_CAST_SETTINGS)
-            };
-            boolean launched = false;
-            for (Intent intent : mirrorIntents) {
-                try {
-                    startActivity(intent);
-                    launched = true;
-                    break;
-                } catch (Exception ignored) {}
-            }
-            if (!launched) {
-                Toast.makeText(this, "Screen Mirroring is active. Connect from your device.", Toast.LENGTH_LONG).show();
-            }
+            launchScreenMirroring();
         });
         rows.addView(mirrorRow);
 
@@ -3840,17 +3813,76 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         rows.getChildAt(0).requestFocus();
     }
 
+    /** Screen Mirroring across Fire OS (DisplayMirroringSinkActivity), OEM Miracast, and Cast */
+    void launchScreenMirroring() {
+        // 1. Fire TV native Miracast sink: DisplayMirroringSinkActivity in com.amazon.cast.sink
+        Intent fireSink = new Intent()
+            .setComponent(new ComponentName("com.amazon.cast.sink", "com.amazon.cast.sink.DisplayMirroringSinkActivity"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (getPackageManager().resolveActivity(fireSink, 0) != null) {
+            try {
+                startActivity(fireSink);
+                return;
+            } catch (Exception ignored) {}
+        }
+
+        // 2. OEM Miracast & Display settings
+        Intent[] oemIntents = new Intent[] {
+            new Intent("com.amazon.device.settings.action.DISPLAY_AND_SOUNDS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            new Intent("com.xiaomi.mitv.action.MIRACAST").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            new Intent().setComponent(new ComponentName("com.xiaomi.mitv.settings", "com.xiaomi.mitv.settings.miracast.MiracastActivity"))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            new Intent().setComponent(new ComponentName("com.mstar.tv.tvplayer.ui", "com.mstar.tv.tvplayer.ui.settings.MiracastActivity"))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            new Intent(Settings.ACTION_CAST_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        };
+        for (Intent intent : oemIntents) {
+            try {
+                if (getPackageManager().resolveActivity(intent, 0) != null) {
+                    startActivity(intent);
+                    return;
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 3. Fallback to WIFI_DISPLAY_SETTINGS ONLY IF it does not resolve to NetworkActivity / Wi-Fi settings
+        Intent wifiDisplay = new Intent("android.settings.WIFI_DISPLAY_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        ResolveInfo ri = getPackageManager().resolveActivity(wifiDisplay, PackageManager.MATCH_DEFAULT_ONLY);
+        if (ri != null && ri.activityInfo != null) {
+            String name = ri.activityInfo.name.toLowerCase();
+            String pkg = ri.activityInfo.packageName.toLowerCase();
+            if (!name.contains("network") && !name.contains("wifi") && !pkg.contains("network") && !name.contains("ctsdummy")) {
+                try {
+                    startActivity(wifiDisplay);
+                    return;
+                } catch (Exception ignored) {}
+            }
+        }
+
+        Toast.makeText(this, "Screen Mirroring is active. Connect from your device.", Toast.LENGTH_LONG).show();
+    }
+
     /** Open Native Settings across Fire TV, Android TV, and OEM TVs */
     void openNativeSettings() {
         Intent[] attempts = new Intent[] {
             new Intent("amazon.intent.action.MAINSETTINGS")
                 .setComponent(new ComponentName("com.amazon.tv.launcher", "com.amazon.tv.launcher.ui.MainSettingsActivity"))
+                .addCategory("android.intent.category.MAINSETTINGS")
+                .addCategory(Intent.CATEGORY_DEFAULT)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            new Intent()
+                .setComponent(new ComponentName("com.amazon.tv.launcher", "com.amazon.tv.launcher.ui.MainSettingsActivity"))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            new Intent()
+                .setComponent(new ComponentName("com.amazon.tv.launcher", "com.amazon.tv.launcher.ui.SettingsActivity"))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             new Intent()
                 .setComponent(new ComponentName("com.amazon.tv.settings.v2", "com.amazon.tv.settings.v2.tv.device.DeviceActivity"))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             getPackageManager().getLeanbackLaunchIntentForPackage("com.amazon.tv.settings.v2"),
             getPackageManager().getLaunchIntentForPackage("com.amazon.tv.settings.v2"),
+            SystemSettings.vendorIntent(this),
+            SystemSettings.intent(this, Settings.ACTION_SETTINGS),
             new Intent("android.settings.SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         };
@@ -3864,7 +3896,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         Toast.makeText(this, R.string.not_available, Toast.LENGTH_SHORT).show();
     }
 
-    /** Gear settings menu: Launcher settings and Native settings. */
+    /** The 3-line menu on top right: Native Settings, Launcher Settings, Module Cards, Dock Edit, Reorder, Power Menu. */
     private void showSettingsMenu() {
         View anchor = findViewById(R.id.btnSettings);
         View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
@@ -3874,6 +3906,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         addSettingsMenuRow(rows, popup, R.string.launcher_settings, () -> startActivityForResult(
                 new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST));
         addSettingsMenuRow(rows, popup, R.string.native_settings, this::openNativeSettings);
+        if (moduleCards) addSettingsMenuRow(rows, popup, R.string.module_cards, this::showModuleCards);
+        if (dockRow) addSettingsMenuRow(rows, popup, R.string.dock_edit, this::startDockEdit);
+        addSettingsMenuRow(rows, popup, R.string.reorder, this::toggleReorder);
+        if (HomeKeyService.canOpenPowerMenu()) {
+            addSettingsMenuRow(rows, popup, R.string.power_menu, HomeKeyService::openPowerMenu);
+        }
 
         panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
         popup.setWidth(Math.max((int) (200 * density), panel.getMeasuredWidth()));
