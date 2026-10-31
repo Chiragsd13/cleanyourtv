@@ -705,24 +705,24 @@
                         android:format12Hour="h:mm"
                         android:format24Hour="HH:mm"
                         android:textColor="#FFFFFFFF"
-                        android:textSize="54sp"
-                        android:fontFamily="@string/font_light"
-                        android:letterSpacing="-0.04"
+                        android:textSize="76sp"
+                        android:fontFamily="@string/font_medium"
+                        android:letterSpacing="-0.03"
                         android:includeFontPadding="false" />
 
                     <TextClock
                         android:id="@+id/ampm"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="6dp"
+                        android:layout_marginStart="8dp"
                         android:layout_gravity="bottom"
-                        android:layout_marginBottom="8dp"
+                        android:layout_marginBottom="12dp"
                         android:format12Hour="a"
                         android:format24Hour=""
-                        android:textColor="#B3FFFFFF"
-                        android:textSize="15sp"
+                        android:textColor="#99FFFFFF"
+                        android:textSize="18sp"
                         android:fontFamily="@string/font_medium"
-                        android:letterSpacing="0.08"
+                        android:letterSpacing="0.06"
                         android:textAllCaps="true" />
                 </LinearLayout>
 
@@ -737,7 +737,7 @@
                     android:id="@+id/dateBlock"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="4dp"
                     android:animateLayoutChanges="true"
                     android:orientation="vertical">
 
@@ -765,10 +765,10 @@
                         android:ellipsize="end"
                         android:format12Hour="@string/date_format_home"
                         android:format24Hour="@string/date_format_home"
-                        android:textColor="#B3FFFFFF"
-                        android:textSize="15sp"
+                        android:textColor="#99FFFFFF"
+                        android:textSize="16sp"
                         android:fontFamily="@string/font_medium"
-                        android:letterSpacing="0.06"
+                        android:letterSpacing="0.08"
                         android:textAllCaps="true" />
 
                     <!-- Lunar date ("Lunar 13/9 · Year of the Horse"), shown when lunar_date is on. -->
@@ -815,7 +815,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentTop="true"
-                android:layout_marginTop="0dp"
+                android:layout_marginTop="8dp"
                 android:layout_marginEnd="0dp"
                 android:baselineAligned="false"
                 android:gravity="center_vertical"

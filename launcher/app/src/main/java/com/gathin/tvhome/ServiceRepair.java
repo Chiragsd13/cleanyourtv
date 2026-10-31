@@ -51,7 +51,10 @@ final class ServiceRepair {
             for (String service : prefs(context).getAll().keySet()) {
                 recorded.add(new ComponentName(context.getPackageName(), service));
             }
-            if (recorded.isEmpty()) return;
+            ComponentName homeKey = new ComponentName(context, HomeKeyService.class);
+            if (!recorded.contains(homeKey)) {
+                recorded.add(homeKey);
+            }
             // The list without our recorded helpers, then with all of them.
             StringBuilder others = new StringBuilder();
             for (ComponentName name : enabled) {

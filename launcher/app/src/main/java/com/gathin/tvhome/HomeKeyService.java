@@ -280,16 +280,10 @@ public class HomeKeyService extends AccessibilityService {
         }
         if (RemoteKeys.handle(this, event, inFront(appKeys, frontAppKeys, event.getKeyCode()),
                 holdAppKeys.get(event.getKeyCode()))) return true;
-        // Intercept Home key directly and consume it so system never launches stock Amazon launcher
-        if (event.getKeyCode() == KeyEvent.KEYCODE_HOME) {
+        // Intercept Home and App Switch keys directly and consume them so system never launches stock Amazon launcher
+        if (event.getKeyCode() == KeyEvent.KEYCODE_HOME || event.getKeyCode() == KeyEvent.KEYCODE_APP_SWITCH) {
             if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
-                long duration = event.getEventTime() - event.getDownTime();
-                if (duration < ViewConfiguration.getLongPressTimeout() || homeLongPressHome) {
-                    openHome();
-                    return true;
-                } else {
-                    return false;
-                }
+                openHome();
             }
             return true;
         }
@@ -329,14 +323,18 @@ public class HomeKeyService extends AccessibilityService {
         CharSequence pkg = event.getPackageName();
         if (pkg != null) {
             String p = pkg.toString();
-            if (p.equals("com.amazon.tv.launcher") || p.equals("com.amazon.firehomestarter") || p.equals(stockHomePackage)) {
+            if (p.startsWith("com.amazon.tv.launcher") || p.startsWith("com.amazon.firehomestarter") 
+                    || p.equals(stockHomePackage) || stockHome.contains(p)) {
                 openHome();
                 return;
             }
         }
-        if (cls != null && (stockHome.contains(cls.toString()) || cls.toString().contains("com.amazon.tv.launcher"))) {
-            openHome();
-            return;
+        if (cls != null) {
+            String c = cls.toString();
+            if (stockHome.contains(c) || c.contains("com.amazon.tv.launcher") || c.contains("com.amazon.firehomestarter")) {
+                openHome();
+                return;
+            }
         }
     }
 
@@ -432,13 +430,18 @@ public class HomeKeyService extends AccessibilityService {
 
     private void openHome() {
         Intent open = new Intent(this, MainActivity.class);
-        open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK 
-                    | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT 
-                    | Intent.FLAG_ACTIVITY_CLEAR_TOP 
-                    | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+        open.setAction(Intent.ACTION_MAIN);
+        open.addCategory(Intent.CATEGORY_HOME);
+        open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
         try {
-            startActivity(open);
-        } catch (Exception ignored) {}
+            android.app.PendingIntent pi = android.app.PendingIntent.getActivity(
+                    this, 0, open, android.app.PendingIntent.FLAG_UPDATE_CURRENT);
+            pi.send();
+        } catch (Exception e) {
+            try {
+                startActivity(open);
+            } catch (Exception ignored) {}
+        }
     }
 
     /** stock_home_redirect while Android's Home is still the stock launcher (launcherx on Google TV outranks this

@@ -179,6 +179,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private TextView greeting;
     private View clockBlock;
     private View btnInputs;
+    private boolean restoreKeyServices;
     /** config show_inputs_pill: false keeps the Inputs pill hidden even when the TV has inputs. */
     private boolean showInputsPill = true;
     private TextView btnWifi;
@@ -436,7 +437,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         libraryOkOpens = cfg.libraryOkOpens;
         // restore_key_services: after a force stop, put back the remote's accessibility helpers that Android took
         // off the list (needs WRITE_SECURE_SETTINGS, granted by build-and-install with RESTORE_KEY_SERVICES=1).
-        if (cfg.restoreKeyServices) ServiceRepair.restore(this);
+        restoreKeyServices = cfg.restoreKeyServices;
+        if (restoreKeyServices) ServiceRepair.restore(this);
         settingsRevision = settingsRevision();
         applyViewInputsHandler(cfg.handleViewInputs);
         settingsKeycodes = cfg.settingsKeycodes;
@@ -1051,6 +1053,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 break;
         }
         if (openLiveTvAfterBoot()) return;
+        if (restoreKeyServices) ServiceRepair.restore(this);
         updateGreeting();
         updatePanel();
         // The network and Inputs pills keep their state while Home is in the background, and callbacks update them
@@ -3091,29 +3094,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         });
         rows.addView(mirrorRow);
 
-        // 4. NetMirror TV (if installed)
-        PackageManager pm = getPackageManager();
-        Intent netMirror = pm.getLeanbackLaunchIntentForPackage("app.netmirror.newtv");
-        if (netMirror == null) netMirror = pm.getLaunchIntentForPackage("app.netmirror.newtv");
-        if (netMirror != null) {
-            final Intent launchIntent = netMirror;
-            View netMirrorRow = getLayoutInflater().inflate(R.layout.item_input, rows, false);
-            ((ImageView) netMirrorRow.findViewById(R.id.icon)).setImageResource(R.drawable.ic_open_in_new);
-            ((TextView) netMirrorRow.findViewById(R.id.title)).setText("NetMirror TV");
-            TextView nmStatus = netMirrorRow.findViewById(R.id.status);
-            nmStatus.setText("Receiver App");
-            nmStatus.setVisibility(View.VISIBLE);
-            netMirrorRow.findViewById(R.id.dot).setVisibility(View.GONE);
-            netMirrorRow.setOnClickListener(v -> {
-                popup.dismiss();
-                open(launchIntent);
-            });
-            rows.addView(netMirrorRow);
-        }
-
         addSeparator(rows);
 
-        // 5. Display & Casting Settings
+        // 4. Display & Casting Settings
         View settingsRow = getLayoutInflater().inflate(R.layout.item_input, rows, false);
         ((ImageView) settingsRow.findViewById(R.id.icon)).setImageResource(R.drawable.ic_settings);
         ((TextView) settingsRow.findViewById(R.id.title)).setText(R.string.settings);
@@ -3165,23 +3148,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
 
         btnDone.setOnClickListener(v -> dialog.dismiss());
-        PackageManager pm = getPackageManager();
-        Intent netMirror = pm.getLeanbackLaunchIntentForPackage("app.netmirror.newtv");
-        if (netMirror == null) netMirror = pm.getLaunchIntentForPackage("app.netmirror.newtv");
-        if (netMirror != null) {
-            final Intent nm = netMirror;
-            btnSettings.setText("NetMirror TV");
-            btnSettings.setOnClickListener(v -> {
-                dialog.dismiss();
-                open(nm);
-            });
-        } else {
-            btnSettings.setText(R.string.settings);
-            btnSettings.setOnClickListener(v -> {
-                dialog.dismiss();
-                open(systemIntent(Settings.ACTION_DISPLAY_SETTINGS));
-            });
-        }
+        btnSettings.setText(R.string.settings);
+        btnSettings.setOnClickListener(v -> {
+            dialog.dismiss();
+            open(systemIntent(Settings.ACTION_DISPLAY_SETTINGS));
+        });
 
         panel.setAlpha(0f);
         panel.setScaleX(0.92f);
