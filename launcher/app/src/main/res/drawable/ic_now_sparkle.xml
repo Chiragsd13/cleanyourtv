@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Samsung Galaxy One UI AI / Now Sparkle Icon -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="14dp" android:height="14dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path
+        android:fillColor="#FF4EE0E6"
+        android:pathData="M12,2L14.2,9.8L22,12L14.2,14.2L12,22L9.8,14.2L2,12L9.8,9.8L12,2Z" />
+    <path
+        android:fillColor="#B34EE0E6"
+        android:pathData="M19,3L19.9,6.1L23,7L19.9,7.9L19,11L18.1,7.9L15,7L18.1,6.1L19,3Z" />
+</vector>

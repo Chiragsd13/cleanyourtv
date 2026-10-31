@@ -162,7 +162,7 @@
         android:orientation="vertical"
         android:paddingStart="56dp"
         android:paddingEnd="56dp"
-        android:paddingTop="26dp"
+        android:paddingTop="16dp"
         android:clipChildren="false"
         android:clipToPadding="false">
 
@@ -175,11 +175,11 @@
 
             <LinearLayout
                 android:id="@+id/leftBlock"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
-                android:layout_toStartOf="@+id/topButtons"
-                android:layout_marginEnd="16dp"
+                android:layout_alignParentTop="true"
+                android:animateLayoutChanges="false"
                 android:orientation="vertical">
 
                 <!-- The header texts use gravity left, not start: the launcher lays out left to right
@@ -187,21 +187,514 @@
                      right edge of these full-width lines instead of staying under the clock. -->
                 <TextView
                     android:id="@+id/greeting"
-                    android:gravity="left"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:singleLine="true"
-                    android:ellipsize="end"
-                    android:layout_marginStart="4dp"
-                    android:textColor="#8CFFFFFF"
-                    android:textSize="12sp"
-                    android:fontFamily="@string/font_medium"
-                    android:letterSpacing="0.22"
-                    android:textAllCaps="true" />
+                    android:layout_width="wrap_content"
+                    android:layout_height="0dp"
+                    android:visibility="gone" />
 
+            <!-- Samsung One UI 9 Now Bar Overlay (Placed directly above the clock/greeting) -->
+            <FrameLayout
+                android:id="@+id/nowBarContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="2dp"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <!-- 1. Collapsed Pill Capsule -->
                 <LinearLayout
-                    android:layout_width="match_parent"
+                    android:id="@+id/nowBarPill"
+                    android:layout_width="wrap_content"
+                    android:layout_height="38dp"
+                    android:background="@drawable/now_bar_pill_focus_bg"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="14dp"
+                    android:focusable="true"
+                    android:clickable="true"
+                    android:nextFocusRight="@+id/btnInputs"
+                    android:nextFocusDown="@+id/grid">
+
+                    <!-- Mini Album Art (or Music Note) -->
+                    <ImageView
+                        android:id="@+id/nowBarPillArt"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/ic_music_note"
+                        android:contentDescription="@null" />
+
+                    <!-- Dynamic Equalizer Animation (3 jumping bars) -->
+                    <LinearLayout
+                        android:id="@+id/nowBarEqualizer"
+                        android:layout_width="14dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="6dp"
+                        android:orientation="horizontal"
+                        android:gravity="bottom">
+
+                        <View
+                            android:id="@+id/eqBar1"
+                            android:layout_width="3dp"
+                            android:layout_height="14dp"
+                            android:background="#FF4EE0E6" />
+
+                        <View
+                            android:id="@+id/eqBar2"
+                            android:layout_width="3dp"
+                            android:layout_height="8dp"
+                            android:layout_marginStart="2dp"
+                            android:background="#FF00E676" />
+
+                        <View
+                            android:id="@+id/eqBar3"
+                            android:layout_width="3dp"
+                            android:layout_height="12dp"
+                            android:layout_marginStart="2dp"
+                            android:background="#FFB388FF" />
+                    </LinearLayout>
+
+                    <!-- Track Title -->
+                    <TextView
+                        android:id="@+id/nowBarPillTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:maxWidth="220dp"
+                        android:singleLine="true"
+                        android:ellipsize="marquee"
+                        android:marqueeRepeatLimit="marquee_forever"
+                        android:textColor="#FFFFFFFF"
+                        android:textSize="13sp"
+                        android:fontFamily="@string/font_medium"
+                        android:letterSpacing="0.02"
+                        android:includeFontPadding="false" />
+
+                    <!-- Dot Separator -->
+                    <TextView
+                        android:id="@+id/nowBarPillDot"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_marginEnd="6dp"
+                        android:text="·"
+                        android:textColor="#80FFFFFF"
+                        android:textSize="14sp"
+                        android:includeFontPadding="false" />
+
+                    <!-- Artist / Source -->
+                    <TextView
+                        android:id="@+id/nowBarPillArtist"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:maxWidth="140dp"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:textColor="#B3FFFFFF"
+                        android:textSize="12sp"
+                        android:fontFamily="@string/font_regular"
+                        android:includeFontPadding="false" />
+
+                    <!-- Right badge: NOW chip with live dot -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:background="@drawable/now_bar_bg"
+                        android:paddingStart="8dp"
+                        android:paddingTop="3dp"
+                        android:paddingEnd="8dp"
+                        android:paddingBottom="3dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="NOW"
+                            android:textColor="#FF4EE0E6"
+                            android:textSize="10sp"
+                            android:fontFamily="@string/font_medium"
+                            android:letterSpacing="0.1"
+                            android:includeFontPadding="false" />
+
+                        <View
+                            android:layout_width="6dp"
+                            android:layout_height="6dp"
+                            android:layout_marginStart="5dp"
+                            android:background="@drawable/now_live_dot" />
+                    </LinearLayout>
+
+                    <!-- Expand Chevron -->
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="6dp"
+                        android:src="@drawable/ic_expand_more"
+                        android:tint="#80FFFFFF"
+                        android:contentDescription="Expand" />
+                </LinearLayout>
+
+                <!-- 2. Expanded Samsung One UI 9 Media Card -->
+                <LinearLayout
+                    android:id="@+id/nowBarExpandedCard"
+                    android:layout_width="400dp"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/now_bar_card_bg"
+                    android:orientation="vertical"
+                    android:padding="16dp"
+                    android:visibility="gone"
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
+
+                    <!-- Header: App Icon + App Name + • Now Playing | Output Chip + Collapse Button -->
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <ImageView
+                                android:id="@+id/expandedAppIcon"
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_music_note"
+                                android:contentDescription="@null" />
+
+                            <TextView
+                                android:id="@+id/expandedAppName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="Spotify"
+                                android:textColor="#FFFFFFFF"
+                                android:textSize="13sp"
+                                android:fontFamily="@string/font_medium"
+                                android:includeFontPadding="false" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:text="•  Now Playing"
+                                android:textColor="#80FFFFFF"
+                                android:textSize="11sp"
+                                android:fontFamily="@string/font_regular"
+                                android:includeFontPadding="false" />
+                        </LinearLayout>
+
+                        <!-- Right: TV Speakers Output Chip + Collapse Button -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <!-- Audio Output Selector Pill (Samsung One UI style) -->
+                            <LinearLayout
+                                android:id="@+id/btnMediaOutput"
+                                android:layout_width="wrap_content"
+                                android:layout_height="24dp"
+                                android:background="@drawable/now_bar_bg"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:paddingStart="8dp"
+                                android:paddingEnd="8dp"
+                                android:layout_marginEnd="8dp"
+                                android:focusable="true"
+                                android:clickable="true"
+                                android:nextFocusRight="@+id/btnMediaCollapse"
+                                android:nextFocusDown="@+id/btnMediaPlayPause">
+
+                                <ImageView
+                                    android:layout_width="12dp"
+                                    android:layout_height="12dp"
+                                    android:src="@drawable/ic_speaker"
+                                    android:tint="#FF4EE0E6"
+                                    android:contentDescription="@null" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="4dp"
+                                    android:text="TV Speakers"
+                                    android:textColor="#CCFFFFFF"
+                                    android:textSize="10sp"
+                                    android:fontFamily="@string/font_medium"
+                                    android:includeFontPadding="false" />
+                            </LinearLayout>
+
+                            <!-- Collapse Button -->
+                            <ImageView
+                                android:id="@+id/btnMediaCollapse"
+                                android:layout_width="26dp"
+                                android:layout_height="26dp"
+                                android:padding="5dp"
+                                android:background="@drawable/media_btn_bg"
+                                android:src="@drawable/ic_expand_more"
+                                android:rotation="180"
+                                android:focusable="true"
+                                android:clickable="true"
+                                android:nextFocusLeft="@+id/btnMediaOutput"
+                                android:nextFocusDown="@+id/btnMediaNext"
+                                android:nextFocusRight="@+id/btnInputs"
+                                android:contentDescription="Collapse" />
+                        </LinearLayout>
+                    </RelativeLayout>
+<!-- Main Row: Large Album Art + Titles -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <!-- Album Art with rounded corners -->
+                        <ImageView
+                            android:id="@+id/expandedAlbumArt"
+                            android:layout_width="64dp"
+                            android:layout_height="64dp"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/ic_music_note"
+                            android:contentDescription="@null" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/expandedTitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:singleLine="true"
+                                android:ellipsize="marquee"
+                                android:marqueeRepeatLimit="marquee_forever"
+                                android:textColor="#FFFFFFFF"
+                                android:textSize="17sp"
+                                android:fontFamily="@string/font_medium"
+                                android:letterSpacing="-0.01"
+                                android:includeFontPadding="false" />
+
+                            <TextView
+                                android:id="@+id/expandedArtist"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:singleLine="true"
+                                android:ellipsize="end"
+                                android:textColor="#CCFFFFFF"
+                                android:textSize="12sp"
+                                android:fontFamily="@string/font_regular"
+                                android:includeFontPadding="false" />
+
+                            <TextView
+                                android:id="@+id/expandedStatus"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:singleLine="true"
+                                android:text="Playing on TV"
+                                android:textColor="#80FFFFFF"
+                                android:textSize="11sp"
+                                android:fontFamily="@string/font_regular"
+                                android:includeFontPadding="false" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Sleek One UI 9 Audio Progress Scrubber -->
+                    <LinearLayout
+                        android:id="@+id/mediaProgressRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/txtMediaElapsed"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0:00"
+                            android:textColor="#80FFFFFF"
+                            android:textSize="10sp"
+                            android:fontFamily="@string/font_regular"
+                            android:includeFontPadding="false" />
+
+                        <ProgressBar
+                            android:id="@+id/mediaProgressBar"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="4dp"
+                            android:layout_marginStart="8dp"
+                            android:layout_marginEnd="8dp"
+                            android:progressDrawable="@drawable/now_bar_progress_bg"
+                            android:progress="0"
+                            android:max="100" />
+
+                        <TextView
+                            android:id="@+id/txtMediaDuration"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="--:--"
+                            android:textColor="#80FFFFFF"
+                            android:textSize="10sp"
+                            android:fontFamily="@string/font_regular"
+                            android:includeFontPadding="false" />
+                    </LinearLayout>
+
+                    <!-- Controls & Menus Row: Prev, Play/Pause, Next | Copy Track Info, Open App -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <!-- Prev -->
+                        <ImageView
+                            android:id="@+id/btnMediaPrev"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:padding="8dp"
+                            android:background="@drawable/media_btn_bg"
+                            android:src="@drawable/ic_skip_previous"
+                            android:focusable="true"
+                            android:clickable="true"
+                            android:nextFocusUp="@+id/btnMediaOutput"
+                            android:nextFocusRight="@+id/btnMediaPlayPause"
+                            android:nextFocusDown="@+id/grid"
+                            android:contentDescription="Previous Track" />
+
+                        <!-- Play/Pause -->
+                        <ImageView
+                            android:id="@+id/btnMediaPlayPause"
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:layout_marginStart="8dp"
+                            android:padding="10dp"
+                            android:background="@drawable/media_btn_play_bg"
+                            android:src="@drawable/ic_pause"
+                            android:focusable="true"
+                            android:clickable="true"
+                            android:nextFocusLeft="@+id/btnMediaPrev"
+                            android:nextFocusRight="@+id/btnMediaNext"
+                            android:nextFocusUp="@+id/btnMediaOutput"
+                            android:nextFocusDown="@+id/grid"
+                            android:contentDescription="Play Pause" />
+
+                        <!-- Next -->
+                        <ImageView
+                            android:id="@+id/btnMediaNext"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:layout_marginStart="8dp"
+                            android:padding="8dp"
+                            android:background="@drawable/media_btn_bg"
+                            android:src="@drawable/ic_skip_next"
+                            android:focusable="true"
+                            android:clickable="true"
+                            android:nextFocusLeft="@+id/btnMediaPlayPause"
+                            android:nextFocusRight="@+id/btnMediaCopy"
+                            android:nextFocusUp="@+id/btnMediaCollapse"
+                            android:nextFocusDown="@+id/grid"
+                            android:contentDescription="Next Track" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1" />
+
+                        <!-- Copy Track Info Pill Button (Samsung One UI Copy Menu Option) -->
+                        <LinearLayout
+                            android:id="@+id/btnMediaCopy"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:layout_marginEnd="6dp"
+                            android:background="@drawable/media_btn_app_bg"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"
+                            android:focusable="true"
+                            android:clickable="true"
+                            android:nextFocusLeft="@+id/btnMediaNext"
+                            android:nextFocusRight="@+id/btnMediaOpenApp"
+                            android:nextFocusUp="@+id/btnMediaCollapse"
+                            android:nextFocusDown="@+id/grid">
+
+                            <ImageView
+                                android:layout_width="13dp"
+                                android:layout_height="13dp"
+                                android:src="@drawable/ic_copy"
+                                android:tint="#CCFFFFFF"
+                                android:contentDescription="@null" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:text="Copy"
+                                android:textColor="#E6FFFFFF"
+                                android:textSize="11sp"
+                                android:fontFamily="@string/font_medium"
+                                android:includeFontPadding="false" />
+                        </LinearLayout>
+
+                        <!-- Open App Pill Button -->
+                        <LinearLayout
+                            android:id="@+id/btnMediaOpenApp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:background="@drawable/media_btn_app_bg"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"
+                            android:focusable="true"
+                            android:clickable="true"
+                            android:nextFocusLeft="@+id/btnMediaCopy"
+                            android:nextFocusRight="@+id/btnInputs"
+                            android:nextFocusUp="@+id/btnMediaCollapse"
+                            android:nextFocusDown="@+id/grid">
+
+                            <TextView
+                                android:id="@+id/txtMediaOpenApp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Open App"
+                                android:textColor="#FFFFFFFF"
+                                android:textSize="11sp"
+                                android:fontFamily="@string/font_medium"
+                                android:includeFontPadding="false" />
+
+                            <ImageView
+                                android:layout_width="12dp"
+                                android:layout_height="12dp"
+                                android:layout_marginStart="4dp"
+                                android:src="@drawable/ic_open_in_new"
+                                android:contentDescription="@null" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </FrameLayout>
+<LinearLayout
+                    android:id="@+id/clockRow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="0dp"
                     android:orientation="horizontal"
                     android:baselineAligned="true">
 
@@ -212,7 +705,7 @@
                         android:format12Hour="h:mm"
                         android:format24Hour="HH:mm"
                         android:textColor="#FFFFFFFF"
-                        android:textSize="52sp"
+                        android:textSize="54sp"
                         android:fontFamily="@string/font_light"
                         android:letterSpacing="-0.04"
                         android:includeFontPadding="false" />
@@ -231,73 +724,68 @@
                         android:fontFamily="@string/font_medium"
                         android:letterSpacing="0.08"
                         android:textAllCaps="true" />
+                </LinearLayout>
 
-                    <View
-                        android:id="@+id/clockDivider"
-                        android:layout_width="1dp"
-                        android:layout_height="26dp"
-                        android:layout_gravity="bottom"
-                        android:layout_marginStart="16dp"
-                        android:layout_marginEnd="16dp"
-                        android:layout_marginBottom="8dp"
-                        android:background="#33FFFFFF" />
+                <View
+                    android:id="@+id/clockDivider"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:visibility="gone" />
 
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
+                <!-- Date Block: Positioned directly at the bottom of the time -->
+                <LinearLayout
+                    android:id="@+id/dateBlock"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:animateLayoutChanges="true"
+                    android:orientation="vertical">
+
+                    <!-- Shamsi date ("27 Mehr 1405"), shown when shamsi_date is on. -->
+                    <TextView
+                        android:id="@+id/shamsiDate"
+                        android:gravity="left"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="bottom"
-                        android:layout_marginBottom="9dp"
-                        android:orientation="vertical">
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:textColor="#E6FFFFFF"
+                        android:textSize="15sp"
+                        android:fontFamily="@string/font_regular"
+                        android:letterSpacing="0.04"
+                        android:includeFontPadding="false"
+                        android:visibility="gone" />
 
-                        <!-- Shamsi date ("27 Mehr 1405"), shown when shamsi_date is on. -->
-                        <TextView
-                            android:id="@+id/shamsiDate"
-                            android:gravity="left"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:singleLine="true"
-                            android:ellipsize="end"
-                            android:textColor="#E6FFFFFF"
-                            android:textSize="17sp"
-                            android:fontFamily="@string/font_regular"
-                            android:letterSpacing="0.02"
-                            android:includeFontPadding="false"
-                            android:visibility="gone" />
+                    <TextClock
+                        android:id="@+id/date"
+                        android:gravity="left"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:format12Hour="@string/date_format_home"
+                        android:format24Hour="@string/date_format_home"
+                        android:textColor="#B3FFFFFF"
+                        android:textSize="15sp"
+                        android:fontFamily="@string/font_medium"
+                        android:letterSpacing="0.06"
+                        android:textAllCaps="true" />
 
-                        <TextClock
-                            android:id="@+id/date"
-                            android:gravity="left"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:singleLine="@bool/date_single_line"
-                            android:maxLines="2"
-                            android:lineSpacingExtra="6dp"
-                            android:ellipsize="end"
-                            android:format12Hour="@string/date_format_home"
-                            android:format24Hour="@string/date_format_home"
-                            android:textColor="#A6FFFFFF"
-                            android:textSize="14sp"
-                            android:fontFamily="@string/font_regular"
-                            android:letterSpacing="0.14"
-                            android:textAllCaps="true" />
-
-                        <!-- Lunar date ("Lunar 13/9 · Year of the Horse"), shown when lunar_date is on. -->
-                        <TextView
-                            android:id="@+id/lunarDate"
-                            android:gravity="left"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:singleLine="true"
-                            android:ellipsize="end"
-                            android:textColor="#80FFFFFF"
-                            android:textSize="14sp"
-                            android:fontFamily="@string/font_regular"
-                            android:letterSpacing="0.14"
-                            android:textAllCaps="true"
-                            android:visibility="gone" />
-                    </LinearLayout>
+                    <!-- Lunar date ("Lunar 13/9 · Year of the Horse"), shown when lunar_date is on. -->
+                    <TextView
+                        android:id="@+id/lunarDate"
+                        android:gravity="left"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:textColor="#80FFFFFF"
+                        android:textSize="13sp"
+                        android:fontFamily="@string/font_regular"
+                        android:letterSpacing="0.04"
+                        android:includeFontPadding="false"
+                        android:visibility="gone" />
                 </LinearLayout>
 
             </LinearLayout>
@@ -326,62 +814,73 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
-                android:layout_alignBottom="@id/leftBlock"
-                android:layout_marginBottom="6dp"
+                android:layout_alignParentTop="true"
+                android:layout_marginTop="0dp"
+                android:layout_marginEnd="0dp"
+                android:baselineAligned="false"
+                android:gravity="center_vertical"
+                android:animateLayoutChanges="true"
+                android:layout_marginBottom="0dp"
                 android:clipChildren="false"
                 android:clipToPadding="false"
                 android:orientation="horizontal">
 
                 <TextView
                     android:id="@+id/btnInputs"
-                    style="@style/TopButton"
-                    android:text="@string/inputs"
+                    style="@style/TopButtonIcon"
+                    android:layout_gravity="center_vertical"
+                    android:contentDescription="@string/inputs"
                     android:drawableStart="@drawable/ic_input"
-                    android:nextFocusDown="@+id/grid" />
-
-                <TextView
-                    android:id="@+id/btnWifi"
-                    style="@style/TopButton"
-                    android:maxWidth="180dp"
-                    android:singleLine="true"
-                    android:ellipsize="end"
-                    android:text="@string/wifi"
-                    android:drawableStart="@drawable/ic_wifi"
-                    android:nextFocusDown="@+id/grid" />
-
-                <TextView
-                    android:id="@+id/btnVpn"
-                    style="@style/TopButton"
-                    android:visibility="gone"
-                    android:singleLine="true"
-                    android:text="@string/vpn"
+                    android:nextFocusLeft="@+id/nowBarPill"
                     android:nextFocusDown="@+id/grid" />
 
                 <TextView
                     android:id="@+id/btnReorder"
                     style="@style/TopButtonIcon"
+                    android:layout_gravity="center_vertical"
                     android:contentDescription="@string/reorder"
-                    android:drawableStart="@drawable/ic_swap_vert"
+                    android:drawableStart="@drawable/ic_edit"
                     android:nextFocusDown="@+id/grid" />
 
                 <TextView
                     android:id="@+id/btnLibraryTop"
                     style="@style/TopButtonIcon"
+                    android:layout_gravity="center_vertical"
                     android:visibility="gone"
                     android:contentDescription="@string/app_library"
                     android:drawableStart="@drawable/ic_apps_pill"
                     android:nextFocusDown="@+id/grid" />
 
                 <TextView
+                    android:id="@+id/btnWifi"
+                    style="@style/TopButtonIcon"
+                    android:layout_gravity="center_vertical"
+                    android:contentDescription="@string/wifi"
+                    android:drawableStart="@drawable/ic_wifi"
+                    android:nextFocusDown="@+id/grid" />
+
+                <TextView
+                    android:id="@+id/btnVpn"
+                    style="@style/TopButtonIcon"
+                    android:layout_gravity="center_vertical"
+                    android:visibility="gone"
+                    android:singleLine="true"
+                    android:contentDescription="@string/vpn"
+                    android:drawableStart="@drawable/ic_home_settings_pill"
+                    android:nextFocusDown="@+id/grid" />
+
+                <TextView
                     android:id="@+id/btnSettings"
-                    style="@style/TopButton"
-                    android:text="@string/settings"
-                    android:drawableStart="@drawable/ic_settings"
+                    style="@style/TopButtonIcon"
+                    android:layout_gravity="center_vertical"
+                    android:contentDescription="@string/menu"
+                    android:drawableStart="@drawable/ic_menu"
                     android:nextFocusDown="@+id/grid" />
             </LinearLayout>
-        </RelativeLayout>
 
-        <!-- The wrapper clips at the grid's edge; the grid itself must not clip so scaled tiles can overflow their cells. -->
+                    </RelativeLayout>
+
+                    <!-- The wrapper clips at the grid's edge; the grid itself must not clip so scaled tiles can overflow their cells. -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"

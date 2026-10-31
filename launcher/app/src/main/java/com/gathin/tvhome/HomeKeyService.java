@@ -199,7 +199,10 @@ public class HomeKeyService extends AccessibilityService {
         frontAppScancodes = RemoteKeys.parseFrontAppScancodes(config.appKeys);
         boolean watchFront = !frontAppKeys.isEmpty() || !frontAppScancodes.isEmpty();
         stockHome.clear();
-        stockHomePackage = config.stockHomeRedirect;
+        stockHomePackage = config.stockHomeRedirect.isEmpty() ? "com.amazon.tv.launcher" : config.stockHomeRedirect;
+        stockHome.add("com.amazon.tv.launcher.ui.HomeActivity_vNext");
+        stockHome.add("com.amazon.tv.launcher.ui.HomeActivity");
+        stockHome.add("com.amazon.firehomestarter.HomeStarterActivity");
         if (!config.stockHomeRedirect.isEmpty()) {
             Intent home = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).setPackage(config.stockHomeRedirect);
             for (ResolveInfo ri : getPackageManager().queryIntentActivities(home, PackageManager.MATCH_DISABLED_COMPONENTS)) {
@@ -277,14 +280,18 @@ public class HomeKeyService extends AccessibilityService {
         }
         if (RemoteKeys.handle(this, event, inFront(appKeys, frontAppKeys, event.getKeyCode()),
                 holdAppKeys.get(event.getKeyCode()))) return true;
-        // home_long_press_home: Android never sees the Home key, so a held press cannot turn into ALL_APPS.
-        if (homeLongPressHome && event.getKeyCode() == KeyEvent.KEYCODE_HOME) {
-            if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) openHome();
+        // Intercept Home key directly and consume it so system never launches stock Amazon launcher
+        if (event.getKeyCode() == KeyEvent.KEYCODE_HOME) {
+            if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
+                long duration = event.getEventTime() - event.getDownTime();
+                if (duration < ViewConfiguration.getLongPressTimeout() || homeLongPressHome) {
+                    openHome();
+                    return true;
+                } else {
+                    return false;
+                }
+            }
             return true;
-        }
-        if (event.getKeyCode() == KeyEvent.KEYCODE_HOME && !stockHome.isEmpty()) {
-            redirectHomeKey(event);
-            return false;
         }
         if (event.getKeyCode() != KeyEvent.KEYCODE_ALL_APPS) return false;
         if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) openHome();
@@ -317,9 +324,20 @@ public class HomeKeyService extends AccessibilityService {
             openHome();
             return;
         }
-        // stock_home_redirect: the firmware turned the stock launcher back on and its home screen came up.
+        // stock_home_redirect: instantly redirect any stock Amazon launcher window back to CleanYourTV
         CharSequence cls = event.getClassName();
-        if (!stockHome.isEmpty() && cls != null && stockHome.contains(cls.toString())) openHome();
+        CharSequence pkg = event.getPackageName();
+        if (pkg != null) {
+            String p = pkg.toString();
+            if (p.equals("com.amazon.tv.launcher") || p.equals("com.amazon.firehomestarter") || p.equals(stockHomePackage)) {
+                openHome();
+                return;
+            }
+        }
+        if (cls != null && (stockHome.contains(cls.toString()) || cls.toString().contains("com.amazon.tv.launcher"))) {
+            openHome();
+            return;
+        }
     }
 
     /** How long power_on_home stays armed after the screen turns on without a reboot. */
@@ -393,7 +411,7 @@ public class HomeKeyService extends AccessibilityService {
     }
 
     /** Lets the system see the key, so a long press still does what the firmware gives it. */
-    private static final long HOME_KEY_DELAY_MS = 250;
+    private static final long HOME_KEY_DELAY_MS = 100; // 0.1s preemption delay
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     /** stock_home_redirect on the Home key: when the stock home is already on screen (it came up at boot, before
@@ -413,10 +431,14 @@ public class HomeKeyService extends AccessibilityService {
     }
 
     private void openHome() {
-        Intent open = stockHomeStays() ? new Intent(this, MainActivity.class)
-                : new Intent(Intent.ACTION_MAIN).setPackage(getPackageName());
-        startActivity(open.addCategory(Intent.CATEGORY_HOME)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED));
+        Intent open = new Intent(this, MainActivity.class);
+        open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK 
+                    | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT 
+                    | Intent.FLAG_ACTIVITY_CLEAR_TOP 
+                    | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+        try {
+            startActivity(open);
+        } catch (Exception ignored) {}
     }
 
     /** stock_home_redirect while Android's Home is still the stock launcher (launcherx on Google TV outranks this
@@ -428,7 +450,7 @@ public class HomeKeyService extends AccessibilityService {
      *  until that task goes (a restart or a reinstall). With this launcher or Android's chooser as Home, openHome
      *  keeps the Home intent. */
     private boolean stockHomeStays() {
-        if (stockHome.isEmpty() || Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false;
+        if (stockHome.isEmpty()) return false;
         ResolveInfo home = getPackageManager().resolveActivity(
                 new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), PackageManager.MATCH_DEFAULT_ONLY);
         return home != null && stockHomePackage.equals(home.activityInfo.packageName);

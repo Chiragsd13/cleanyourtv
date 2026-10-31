@@ -168,7 +168,7 @@
         android:orientation="vertical"
         android:paddingStart="56dp"
         android:paddingEnd="56dp"
-        android:paddingTop="26dp"
+        android:paddingTop="16dp"
         android:clipChildren="false"
         android:clipToPadding="false">
 
@@ -181,11 +181,10 @@
 
             <LinearLayout
                 android:id="@+id/leftBlock"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
-                android:layout_toEndOf="@+id/topButtons"
-                android:layout_marginStart="16dp"
+                android:layout_alignParentTop="true"
                 android:orientation="horizontal"
                 android:gravity="right|bottom">
 
@@ -259,20 +258,9 @@
                     android:orientation="vertical">
                     <TextView
                         android:id="@+id/greeting"
-                        android:gravity="center_horizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:maxLines="1"
-                        android:autoSizeTextType="uniform"
-                        android:autoSizeMinTextSize="9sp"
-                        android:autoSizeMaxTextSize="12sp"
-                        android:autoSizeStepGranularity="1sp"
-                        android:ellipsize="end"
-                        android:textColor="#8CFFFFFF"
-                        android:textSize="12sp"
-                        android:fontFamily="@string/font_medium"
-                        android:letterSpacing="0"
-                        android:textAllCaps="true" />
+                        android:layout_width="wrap_content"
+                        android:layout_height="0dp"
+                        android:visibility="gone" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -341,56 +329,65 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
-                android:layout_alignBottom="@id/leftBlock"
-                android:layout_marginBottom="6dp"
+                android:layout_alignParentTop="true"
+                android:layout_marginTop="0dp"
+                android:layout_marginStart="0dp"
+                android:baselineAligned="false"
+                android:gravity="center_vertical"
+                android:animateLayoutChanges="true"
+                android:layout_marginBottom="0dp"
                 android:clipChildren="false"
                 android:clipToPadding="false"
                 android:orientation="horizontal">
 
                 <TextView
                     android:id="@+id/btnSettings"
-                    style="@style/TopButton"
-                    android:text="@string/settings"
-                    android:drawableStart="@drawable/ic_settings"
+                    style="@style/TopButtonIcon"
+                    android:layout_gravity="center_vertical"
+                    android:contentDescription="@string/menu"
+                    android:drawableStart="@drawable/ic_menu"
+                    android:nextFocusDown="@+id/grid" />
+
+                <TextView
+                    android:id="@+id/btnVpn"
+                    style="@style/TopButtonIcon"
+                    android:layout_gravity="center_vertical"
+                    android:visibility="gone"
+                    android:singleLine="true"
+                    android:contentDescription="@string/vpn"
+                    android:drawableStart="@drawable/ic_home_settings_pill"
+                    android:nextFocusDown="@+id/grid" />
+
+                <TextView
+                    android:id="@+id/btnWifi"
+                    style="@style/TopButtonIcon"
+                    android:layout_gravity="center_vertical"
+                    android:contentDescription="@string/wifi"
+                    android:drawableStart="@drawable/ic_wifi"
                     android:nextFocusDown="@+id/grid" />
 
                 <TextView
                     android:id="@+id/btnLibraryTop"
                     style="@style/TopButtonIcon"
+                    android:layout_gravity="center_vertical"
                     android:visibility="gone"
                     android:contentDescription="@string/app_library"
-                    android:drawableStart="@drawable/ic_apps"
+                    android:drawableStart="@drawable/ic_apps_pill"
                     android:nextFocusDown="@+id/grid" />
 
                 <TextView
                     android:id="@+id/btnReorder"
                     style="@style/TopButtonIcon"
+                    android:layout_gravity="center_vertical"
                     android:contentDescription="@string/reorder"
-                    android:drawableStart="@drawable/ic_swap_vert"
-                    android:nextFocusDown="@+id/grid" />
-
-                <TextView
-                    android:id="@+id/btnVpn"
-                    style="@style/TopButton"
-                    android:visibility="gone"
-                    android:singleLine="true"
-                    android:text="@string/vpn"
-                    android:nextFocusDown="@+id/grid" />
-
-                <TextView
-                    android:id="@+id/btnWifi"
-                    style="@style/TopButton"
-                    android:maxWidth="180dp"
-                    android:singleLine="true"
-                    android:ellipsize="end"
-                    android:text="@string/wifi"
-                    android:drawableStart="@drawable/ic_wifi"
+                    android:drawableStart="@drawable/ic_edit"
                     android:nextFocusDown="@+id/grid" />
 
                 <TextView
                     android:id="@+id/btnInputs"
-                    style="@style/TopButton"
-                    android:text="@string/inputs"
+                    style="@style/TopButtonIcon"
+                    android:layout_gravity="center_vertical"
+                    android:contentDescription="@string/inputs"
                     android:drawableStart="@drawable/ic_input"
                     android:nextFocusDown="@+id/grid" />
             </LinearLayout>

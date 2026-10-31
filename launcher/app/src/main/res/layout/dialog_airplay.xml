@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/glass_panel"
+    android:paddingStart="26dp"
+    android:paddingEnd="26dp"
+    android:paddingTop="22dp"
+    android:paddingBottom="20dp"
+    android:elevation="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/ic_airplay"
+            android:tint="#FFFFFFFF"
+            android:layout_marginEnd="12dp" />
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/airplay_homekit"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textColor="#FFFFFFFF"
+            android:textSize="22sp"
+            android:fontFamily="@string/font_medium"
+            android:letterSpacing="-0.01" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ready"
+            android:textColor="#FF4CD964"
+            android:textSize="13sp"
+            android:fontFamily="@string/font_medium"
+            android:background="@drawable/pill_bg"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:textColor="#E6FFFFFF"
+        android:textSize="15sp"
+        android:lineSpacingExtra="5sp"
+        android:fontFamily="@string/font_body"
+        android:text="AirPlay is active and ready on this TV.\n\n1. Ensure your iPhone, iPad, or Mac is connected to the same Wi-Fi.\n2. Open Control Center on your Apple device and tap AirPlay or Screen Mirroring.\n3. Select this TV to stream music, photos, or video." />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="22dp"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <TextView
+            android:id="@+id/btnSettings"
+            style="@style/TopButton"
+            android:text="@string/settings"
+            android:layout_marginEnd="10dp"
+            android:nextFocusUp="@+id/btnSettings"
+            android:nextFocusDown="@+id/btnSettings"
+            android:nextFocusLeft="@+id/btnSettings"
+            android:nextFocusRight="@+id/btnDone" />
+
+        <TextView
+            android:id="@+id/btnDone"
+            style="@style/TopButton"
+            android:text="Done"
+            android:nextFocusUp="@+id/btnDone"
+            android:nextFocusDown="@+id/btnDone"
+            android:nextFocusLeft="@+id/btnSettings"
+            android:nextFocusRight="@+id/btnDone" />
+    </LinearLayout>
+</LinearLayout>

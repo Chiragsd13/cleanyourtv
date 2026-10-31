@@ -780,11 +780,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             ((TextView) btnSettings).setText(R.string.launcher_settings);
             ((TextView) btnSettings).setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_home_settings_pill, 0, 0, 0);
         }
-        btnSettings.setOnClickListener(v -> {
-            if (launcherSettingsButton) startActivityForResult(
-                    new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST);
-            else open(systemIntent(Settings.ACTION_SETTINGS));
-        });
+        btnSettings.setOnClickListener(v -> showSettingsMenu());
+        LinearLayout topButtons = findViewById(R.id.topButtons);
+        topButtons.setBaselineAligned(false);
+        topButtons.setGravity(Gravity.CENTER_VERTICAL);
         btnReorder = findViewById(R.id.btnReorder);
         btnReorder.setOnClickListener(v -> toggleReorder());
         btnReorder.setVisibility(cfg.reorderButton ? View.VISIBLE : View.GONE);
@@ -797,10 +796,16 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             libraryFromTopBar = true;   // closing it goes back to this button, not to the pill after the last row
         });
         btnLibraryTop.setVisibility(cfg.libraryButton && cfg.appLibrary ? View.VISIBLE : View.GONE);
+        setupTopButtonExpansion((TextView) btnInputs);
+        setupTopButtonExpansion((TextView) btnReorder);
+        setupTopButtonExpansion((TextView) btnWifi);
+        setupTopButtonExpansion((TextView) btnVpn);
+        setupTopButtonExpansion((TextView) btnLibraryTop);
+        setupTopButtonExpansion((TextView) btnSettings);
         addTopBarApps(cfg.topBarApps, cfg.launchActions);
         iconOnlyButtons = cfg.iconOnlyButtons;
         topMenu = cfg.topMenu;
-        wifiIconOnly = iconOnlyButtons && cfg.wifiLabelWidth <= 0;
+        wifiIconOnly = true;
         if (cfg.wifiStatusColor) {
             wifiPlainTint = btnWifi.getCompoundDrawableTintList();
             wifiOnlineTint = getColorStateList(R.color.pill_icon_online);
@@ -820,7 +825,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             if (!iconOnlyButtons) makeIconOnly((TextView) btnSettings);
             btnSettings.setOnClickListener(v -> showTopMenu());
             // The lone gear sits at the header's middle, not on its bottom line like the row of pills.
-            LinearLayout topButtons = findViewById(R.id.topButtons);
+            topButtons = findViewById(R.id.topButtons);
             RelativeLayout.LayoutParams tlp = (RelativeLayout.LayoutParams) topButtons.getLayoutParams();
             tlp.addRule(RelativeLayout.ALIGN_TOP, R.id.leftBlock);
             tlp.bottomMargin = 0;
@@ -872,9 +877,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnWifi, btnVpn, btnReorder, btnLibraryTop, btnSettings));
             pills.addAll(topAppButtons);
             for (View button : pills) {
-                button.setOnFocusChangeListener((view, focused) -> view.animate()
-                        .scaleX(focused ? 1.04f : 1f).scaleY(focused ? 1.04f : 1f)
-                        .setDuration(reducedMotion ? Motion.REDUCED_MS : 160).start());
+                View.OnFocusChangeListener prevFocus = button.getOnFocusChangeListener();
+                button.setOnFocusChangeListener((view, focused) -> {
+                    if (prevFocus != null) prevFocus.onFocusChange(view, focused);
+                    view.animate()
+                            .scaleX(focused ? 1.04f : 1f).scaleY(focused ? 1.04f : 1f)
+                            .setDuration(reducedMotion ? Motion.REDUCED_MS : 160).start();
+                });
             }
         }
         if (festive) applyFestiveSkin((TextView) btnInputs, (TextView) btnSettings);
@@ -1312,8 +1321,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         for (int code : settingsKeycodes) {
             if (event.getKeyCode() != code) continue;
             if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
-                open(settingsKeyPanel ? new Intent(this, QuickSettingsActivity.class)
-                        : systemIntent(Settings.ACTION_SETTINGS));
+                if (settingsKeyPanel) open(new Intent(this, QuickSettingsActivity.class));
+                else openNativeSettings();
             }
             return true;
         }
@@ -2452,6 +2461,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             button.setCompoundDrawablesRelative(logo, null, null, null);
             button.setCompoundDrawableTintList(null);
             button.setContentDescription(label);
+            setupTopButtonExpansion(button);
             Intent target = launch;
             button.setOnClickListener(v -> open(new Intent(target)));
             // After the network pill and the VPN pill; the Hebrew bar runs the other way, so before both there.
@@ -2844,13 +2854,28 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             text = stub || icon == R.drawable.ic_ethernet ? "" : name;
             SpannableString label = new SpannableString(text + " " + badge);
             label.setSpan(span, text.length() + 1, label.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            if (!TextUtils.equals(btnWifi.getText(), label)) btnWifi.setText(label);
-        } else if (!TextUtils.equals(btnWifi.getText(), text)) {
-            btnWifi.setText(text);
+            btnWifi.setContentDescription(label);
+            if (btnWifi.hasFocus()) {
+                btnWifi.setText(label);
+            } else {
+                btnWifi.setText(null);
+            }
+        } else {
+            btnWifi.setContentDescription(text);
+            if (btnWifi.hasFocus()) {
+                btnWifi.setText(text);
+            } else {
+                btnWifi.setText(null);
+            }
         }
-        if (wifiIconOnly) {
-            btnWifi.setContentDescription(btnWifi.getText());
+        if (!btnWifi.hasFocus()) {
             btnWifi.setText(null);
+            if (btnWifi.getLayoutParams() != null) {
+                btnWifi.getLayoutParams().width = Math.round(42 * density);
+            }
+            int pad = Math.round(10 * density);
+            btnWifi.setPaddingRelative(pad, 0, pad, 0);
+            btnWifi.setCompoundDrawablePadding(0);
         }
         if (festive && diya != null) {
             if (online && flame == 0) flame = 3;   // online some other way (cellular, USB tethering)
@@ -2890,15 +2915,62 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /** The open library came from the VPN pill (vpn_pill, no VPN app): closing it returns there while the pill still shows. */
     private boolean libraryFromVpnPill;
 
+    private void updateTopButtonState(TextView button, boolean active, CharSequence defaultDesc) {
+        if (button == null) return;
+        CharSequence desc = button.getContentDescription();
+        if (TextUtils.isEmpty(desc)) desc = defaultDesc;
+        if (active && !TextUtils.isEmpty(desc)) {
+            button.setText(desc);
+            if (button.getLayoutParams() != null) {
+                button.getLayoutParams().width = ViewGroup.LayoutParams.WRAP_CONTENT;
+            }
+            int pad = Math.round(14 * density);
+            button.setPaddingRelative(pad, 0, pad, 0);
+            button.setCompoundDrawablePadding(Math.round(8 * density));
+        } else {
+            button.setText(null);
+            if (button.getLayoutParams() != null) {
+                button.getLayoutParams().width = Math.round(42 * density);
+            }
+            int pad = Math.round(10 * density);
+            button.setPaddingRelative(pad, 0, pad, 0);
+            button.setCompoundDrawablePadding(0);
+        }
+        button.requestLayout();
+    }
+
+    private void setupTopButtonExpansion(TextView button) {
+        if (button == null) return;
+        makeIconOnly(button);
+        final CharSequence defaultDesc = button.getContentDescription();
+        button.setOnFocusChangeListener((v, focused) -> {
+            updateTopButtonState(button, focused, defaultDesc);
+        });
+        button.setOnHoverListener((v, event) -> {
+            if (event.getAction() == android.view.MotionEvent.ACTION_HOVER_ENTER) {
+                updateTopButtonState(button, true, defaultDesc);
+                return true;
+            } else if (event.getAction() == android.view.MotionEvent.ACTION_HOVER_EXIT) {
+                updateTopButtonState(button, button.hasFocus(), defaultDesc);
+                return true;
+            }
+            return false;
+        });
+    }
+
     /** Turns a labelled top pill into the round TopButtonIcon shape: no text, the icon centred by even padding. */
     private void makeIconOnly(TextView pill) {
-        pill.setContentDescription(pill.getText());
+        if (!TextUtils.isEmpty(pill.getText())) {
+            pill.setContentDescription(pill.getText());
+        }
         pill.setText(null);
         pill.setMaxWidth(Integer.MAX_VALUE);
         int pad = Math.round(10 * density);
         pill.setPaddingRelative(pad, 0, pad, 0);
         pill.setCompoundDrawablePadding(0);
-        pill.getLayoutParams().width = Math.round(42 * density);
+        if (pill.getLayoutParams() != null) {
+            pill.getLayoutParams().width = Math.round(42 * density);
+        }
     }
 
     // ---- festive skin ------------------------------------------------------------------------------
@@ -2956,9 +3028,116 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      * The network pill opens the VPN app when one is configured and installed, otherwise Wi-Fi settings. With
      * vpn_pill the VPN app has its own pill, so this one always opens Wi-Fi settings.
      */
+    private void showWifiMenu() {
+        View anchor = findViewById(R.id.btnWifi);
+        View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
+        LinearLayout rows = panel.findViewById(R.id.rows);
+        PopupWindow popup = glassPopup(panel, (int) (240 * density));
+
+        WifiManager wm = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        boolean wifiEnabled = wm != null && wm.isWifiEnabled();
+
+        // 1. Wi-Fi Toggle Row
+        View toggleRow = getLayoutInflater().inflate(R.layout.item_input, rows, false);
+        ((ImageView) toggleRow.findViewById(R.id.icon)).setImageResource(R.drawable.ic_wifi);
+        ((TextView) toggleRow.findViewById(R.id.title)).setText(R.string.wifi);
+        TextView toggleStatus = toggleRow.findViewById(R.id.status);
+        View toggleDot = toggleRow.findViewById(R.id.dot);
+        toggleStatus.setText(wifiEnabled ? "On" : "Off");
+        toggleStatus.setVisibility(View.VISIBLE);
+        toggleDot.setVisibility(wifiEnabled ? View.VISIBLE : View.GONE);
+        toggleRow.setOnClickListener(v -> {
+            popup.dismiss();
+            if (wm != null) {
+                boolean newState = !wm.isWifiEnabled();
+                try {
+                    wm.setWifiEnabled(newState);
+                    Toast.makeText(this, newState ? "Turning Wi-Fi on..." : "Turning Wi-Fi off...", Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    open(systemIntent(Settings.ACTION_WIFI_SETTINGS));
+                }
+            }
+        });
+        rows.addView(toggleRow);
+
+        // 2. If Wi-Fi is enabled, show current connection and configured networks
+        if (wifiEnabled && wm != null) {
+            WifiInfo info = wm.getConnectionInfo();
+            String currentSsid = info != null ? info.getSSID() : null;
+            if (currentSsid != null && currentSsid.startsWith("\"") && currentSsid.endsWith("\"") && currentSsid.length() >= 2) {
+                currentSsid = currentSsid.substring(1, currentSsid.length() - 1);
+            }
+            if (!TextUtils.isEmpty(currentSsid) && !"<unknown ssid>".equals(currentSsid)) {
+                View connectedRow = getLayoutInflater().inflate(R.layout.item_input, rows, false);
+                ((ImageView) connectedRow.findViewById(R.id.icon)).setImageResource(R.drawable.ic_wifi);
+                ((TextView) connectedRow.findViewById(R.id.title)).setText(currentSsid);
+                TextView cStatus = connectedRow.findViewById(R.id.status);
+                cStatus.setText(R.string.connected);
+                cStatus.setVisibility(View.VISIBLE);
+                connectedRow.findViewById(R.id.dot).setVisibility(View.VISIBLE);
+                connectedRow.setOnClickListener(v -> {
+                    popup.dismiss();
+                    open(systemIntent(Settings.ACTION_WIFI_SETTINGS));
+                });
+                rows.addView(connectedRow);
+            }
+
+            try {
+                List<android.net.wifi.WifiConfiguration> configs = wm.getConfiguredNetworks();
+                if (configs != null) {
+                    for (android.net.wifi.WifiConfiguration config : configs) {
+                        String s = config.SSID;
+                        if (s != null && s.startsWith("\"") && s.endsWith("\"") && s.length() >= 2) {
+                            s = s.substring(1, s.length() - 1);
+                        }
+                        if (s != null && !s.equals(currentSsid) && !"<unknown ssid>".equals(s)) {
+                            final int netId = config.networkId;
+                            final String targetSsid = s;
+                            View savedRow = getLayoutInflater().inflate(R.layout.item_input, rows, false);
+                            ((ImageView) savedRow.findViewById(R.id.icon)).setImageResource(R.drawable.ic_wifi);
+                            ((TextView) savedRow.findViewById(R.id.title)).setText(targetSsid);
+                            savedRow.findViewById(R.id.status).setVisibility(View.GONE);
+                            savedRow.findViewById(R.id.dot).setVisibility(View.GONE);
+                            savedRow.setOnClickListener(v -> {
+                                popup.dismiss();
+                                try {
+                                    wm.disconnect();
+                                    wm.enableNetwork(netId, true);
+                                    wm.reconnect();
+                                    Toast.makeText(this, "Connecting to " + targetSsid + "...", Toast.LENGTH_SHORT).show();
+                                } catch (Exception ignored) {}
+                            });
+                            rows.addView(savedRow);
+                        }
+                    }
+                }
+            } catch (SecurityException ignored) {}
+        }
+
+        addSeparator(rows);
+
+        // 3. Wi-Fi Settings row
+        View settingsRow = getLayoutInflater().inflate(R.layout.item_input, rows, false);
+        ((ImageView) settingsRow.findViewById(R.id.icon)).setImageResource(R.drawable.ic_settings);
+        ((TextView) settingsRow.findViewById(R.id.title)).setText(R.string.wifi);
+        TextView moreStatus = settingsRow.findViewById(R.id.status);
+        moreStatus.setText("Settings");
+        moreStatus.setVisibility(View.VISIBLE);
+        settingsRow.findViewById(R.id.dot).setVisibility(View.GONE);
+        settingsRow.setOnClickListener(v -> {
+            popup.dismiss();
+            open(systemIntent(Settings.ACTION_WIFI_SETTINGS));
+        });
+        rows.addView(settingsRow);
+
+        panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        popup.setWidth(Math.max((int) (240 * density), panel.getMeasuredWidth()));
+        dropIn(popup, panel, anchor, getResources().getBoolean(R.bool.rtl_menu_bar) ? Gravity.START : Gravity.END);
+        rows.getChildAt(0).requestFocus();
+    }
+
     private void openNetworkPill() {
-        Intent i = vpnPill ? null : vpnAppIntent();
-        open(i != null ? i : systemIntent(Settings.ACTION_WIFI_SETTINGS));
+        showWifiMenu();
     }
 
     /** vpn_app's launch intent, or null when none is set or it is not installed. */
@@ -3476,31 +3655,47 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         rows.getChildAt(0).requestFocus();
     }
 
-    /** The header opens launcher settings directly; hold OK keeps the extra home actions available. */
+    /** Open Native Settings across Fire TV, Android TV, and OEM TVs */
+    void openNativeSettings() {
+        Intent[] attempts = new Intent[] {
+            new Intent("amazon.intent.action.MAINSETTINGS")
+                .setComponent(new ComponentName("com.amazon.tv.launcher", "com.amazon.tv.launcher.ui.MainSettingsActivity"))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            new Intent()
+                .setComponent(new ComponentName("com.amazon.tv.settings.v2", "com.amazon.tv.settings.v2.tv.device.DeviceActivity"))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            getPackageManager().getLeanbackLaunchIntentForPackage("com.amazon.tv.settings.v2"),
+            getPackageManager().getLaunchIntentForPackage("com.amazon.tv.settings.v2"),
+            new Intent("android.settings.SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        };
+        for (Intent intent : attempts) {
+            if (intent == null) continue;
+            try {
+                startActivity(intent);
+                return;
+            } catch (Exception ignored) {}
+        }
+        Toast.makeText(this, R.string.not_available, Toast.LENGTH_SHORT).show();
+    }
+
+    /** The 3-line menu on top right: Native Settings, Launcher Settings, Reorder, Power Menu. */
     private void showSettingsMenu() {
         View anchor = findViewById(R.id.btnSettings);
         View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
         LinearLayout rows = panel.findViewById(R.id.rows);
         PopupWindow popup = glassPopup(panel, (int) (200 * density));
-        if (!launcherSettingsButton) addSettingsMenuRow(rows, popup, R.string.launcher_settings, () -> startActivityForResult(
+        
+        addSettingsMenuRow(rows, popup, R.string.native_settings, this::openNativeSettings);
+        addSettingsMenuRow(rows, popup, R.string.launcher_settings, () -> startActivityForResult(
                 new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST));
-        // Firmware that ships its own settings app next to the AOSP one (Xiaomi China is one): the
-        // vendor app holds pages the AOSP settings has no row for, such as Account & Security with
-        // the ADB switch. Offered here only while one of them is installed.
-        if (SystemSettings.vendorIntent(this) != null) {
-            addSettingsMenuRow(rows, popup, R.string.native_settings, () -> {
-                Intent vendor = SystemSettings.vendorIntent(this);
-                if (vendor != null) open(vendor);
-            });
-        }
-        if (moduleCards) addSettingsMenuRow(rows, popup, R.string.module_cards, this::showModuleCards);
-        if (dockRow) addSettingsMenuRow(rows, popup, R.string.dock_edit, this::startDockEdit);
         addSettingsMenuRow(rows, popup, R.string.reorder, this::toggleReorder);
-        // A launcher may not restart the TV itself; the Home key helper can open the system power menu instead.
-        if (HomeKeyService.canOpenPowerMenu()) addSettingsMenuRow(rows, popup, R.string.power_menu, HomeKeyService::openPowerMenu);
+        if (HomeKeyService.canOpenPowerMenu()) {
+            addSettingsMenuRow(rows, popup, R.string.power_menu, HomeKeyService::openPowerMenu);
+        }
+
         panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
         popup.setWidth(Math.max((int) (200 * density), panel.getMeasuredWidth()));
-        // Hebrew puts Settings at the left of the header: grow the menu inward from it.
         dropIn(popup, panel, anchor, getResources().getBoolean(R.bool.rtl_menu_bar)
                 ? Gravity.START : Gravity.END);
         rows.getChildAt(0).requestFocus();
@@ -3548,6 +3743,16 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // Some firmware has no App info page at all; a row that only toasts "can't open" helps nobody.
         Intent info = SystemSettings.appInfo(this, pkg);
         if (info != null) addSettingsMenuRow(rows, popup, R.string.library_app_info, () -> open(info));
+        try {
+            ApplicationInfo ai = getPackageManager().getApplicationInfo(pkg, 0);
+            boolean isNonUpgradedSystem = (ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0 && (ai.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) == 0;
+            if (!isNonUpgradedSystem) {
+                addSettingsMenuRow(rows, popup, R.string.uninstall, () -> {
+                    Intent deleteIntent = new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + pkg));
+                    open(deleteIntent);
+                });
+            }
+        } catch (PackageManager.NameNotFoundException ignored) {}
         panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
         popup.setWidth(Math.max((int) (200 * density), panel.getMeasuredWidth()));
         // Dock tiles sit near the bottom of the screen: open the menu above the tile when it would not fit below.

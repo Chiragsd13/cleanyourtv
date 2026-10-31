@@ -20,7 +20,8 @@ final class SystemSettings {
         ResolveInfo resolved = pm.resolveActivity(standard, PackageManager.MATCH_DEFAULT_ONLY);
         // Fire OS resolves the standard actions to a CTS compliance stub that opens nothing;
         // treat it as missing so the vendor fallback runs.
-        if (resolved != null && !resolved.activityInfo.name.contains("CTSDummy")) return standard;
+        if (resolved != null && !resolved.activityInfo.name.contains("CTSDummy")
+                && !resolved.activityInfo.packageName.contains("dummy")) return standard;
         Intent vendor = vendorIntent(context);
         if (vendor != null) return vendor;
         // Some firmware ships the AOSP TV settings app with no filter for the standard actions (HY300 Pro+
@@ -44,6 +45,25 @@ final class SystemSettings {
      *  MainActivity's Settings menu offers it as "Native settings" while one is installed. */
     static Intent vendorIntent(Context context) {
         PackageManager pm = context.getPackageManager();
+
+        // 1. Fire TV MainSettingsActivity (requires amazon.intent.action.MAINSETTINGS)
+        try {
+            pm.getPackageInfo("com.amazon.tv.launcher", 0);
+            Intent amz = new Intent("amazon.intent.action.MAINSETTINGS");
+            amz.setComponent(new ComponentName("com.amazon.tv.launcher", "com.amazon.tv.launcher.ui.MainSettingsActivity"));
+            amz.addCategory("android.intent.category.MAINSETTINGS");
+            amz.addCategory(Intent.CATEGORY_DEFAULT);
+            if (pm.resolveActivity(amz, 0) != null) return amz;
+        } catch (Exception ignored) {}
+
+        // 2. Fire TV Settings v2
+        try {
+            pm.getPackageInfo("com.amazon.tv.settings.v2", 0);
+            Intent v2 = new Intent();
+            v2.setComponent(new ComponentName("com.amazon.tv.settings.v2", "com.amazon.tv.settings.v2.tv.device.DeviceActivity"));
+            if (pm.resolveActivity(v2, 0) != null) return v2;
+        } catch (Exception ignored) {}
+
         for (String value : context.getResources().getStringArray(R.array.settings_fallback_components)) {
             ComponentName component = ComponentName.unflattenFromString(value);
             if (component == null) continue;
@@ -53,7 +73,14 @@ final class SystemSettings {
             } catch (PackageManager.NameNotFoundException e) {
                 continue;
             }
-            return new Intent().setComponent(component);
+            Intent intent = new Intent();
+            if ("com.amazon.tv.launcher".equals(component.getPackageName())) {
+                intent.setAction("amazon.intent.action.MAINSETTINGS");
+                intent.addCategory("android.intent.category.MAINSETTINGS");
+                intent.addCategory(Intent.CATEGORY_DEFAULT);
+            }
+            intent.setComponent(component);
+            return intent;
         }
         return null;
     }

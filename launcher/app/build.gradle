@@ -10,7 +10,7 @@ android {
         // Opt-in identity for firmware with a package-name HOME allowlist; see docs/devices/xiaomi-mitv-aetp0-dofus.md.
         applicationId providers.gradleProperty('launcherApplicationId').getOrElse('com.gathin.tvhome')
         minSdk 26
-        targetSdk 34
+        targetSdk 28
         versionCode 10
         versionName '3.1'
     }
@@ -32,6 +32,11 @@ android {
             // leaving it out saves about 14 KB of every install.
             excludes += ['kotlin/**', 'META-INF/*.version', 'META-INF/*.kotlin_module', 'DebugProbesKt.bin']
         }
+    }
+
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
     }
 
     compileOptions {

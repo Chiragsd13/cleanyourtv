@@ -4,6 +4,7 @@
     <string name="inputs">Inputs</string>
     <string name="wifi">Wi-Fi</string>
     <string name="settings">Settings</string>
+    <string name="menu">Menu</string>
     <string name="choose_input">Inputs</string>
     <string name="connected">Connected</string>
     <string name="standby">Standby</string>
@@ -11,6 +12,8 @@
     <string name="live_tv">Live TV</string>
     <string name="no_inputs">No inputs found</string>
     <string name="more_inputs">More inputs</string>
+    <string name="airplay_homekit">AirPlay &amp; HomeKit</string>
+    <string name="screen_mirroring">Screen Mirroring</string>
     <string name="good_morning">Good morning</string>
     <string name="good_afternoon">Good afternoon</string>
     <string name="good_evening">Good evening</string>
@@ -103,7 +106,7 @@
     <string name="tile_add_to_dock">Add to dock</string>
     <string name="tile_replace_in_dock">Replace with another app</string>
     <string name="dock_edit_pick_place">Choose the dock place for this app and press OK. Back to cancel.</string>
-    <string name="reorder">Reorder apps</string>
+    <string name="reorder">Reorder</string>
     <string name="tile_move">Move</string>
     <string name="reorder_hint">OK picks up an app, arrows move it, Back places it. Back again to finish.</string>
     <string name="reorder_not_saved">Couldn\'t save the new order</string>
@@ -114,6 +117,7 @@
     <string name="library_remove_shortcut">Remove from Home</string>
     <string name="library_open">Open</string>
     <string name="library_app_info">App info</string>
+    <string name="uninstall">Uninstall</string>
     <string name="library_save_failed">Could not save the shortcut</string>
     <string name="library_recent">New · Add to Home</string>
     <string name="library_hint_add">Press to add to Home · Hold for options</string>
