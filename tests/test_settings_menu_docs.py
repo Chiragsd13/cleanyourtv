@@ -89,7 +89,7 @@ class SettingsMenuDocumentedTest(unittest.TestCase):
 
     def test_every_menu_row_is_named_in_the_readme_block(self):
         rows = menu_rows(self.body)
-        self.assertGreaterEqual(len(rows), 4, "read no rows out of showSettingsMenu(): the reader is broken")
+        self.assertGreaterEqual(len(rows), 2, "read no rows out of showSettingsMenu(): the reader is broken")
         self.assertTrue(self.block, f"docs/launcher.md has no {BLOCK} section")
         for name in rows:
             with self.subTest(row=name):
@@ -125,11 +125,10 @@ class MenuReaderTest(unittest.TestCase):
         self.assertEqual(menu_rows(body), [])
 
     def test_the_real_menu_is_read(self):
-        # Six rows today: launcher settings, native settings, module cards, dock edit, reorder, restart.
+        # Two rows: launcher settings, native settings.
         body = method_body(MAIN_ACTIVITY.read_text(encoding="utf-8"))
         self.assertEqual(menu_rows(body),
-                         ["launcher_settings", "native_settings", "module_cards", "dock_edit", "reorder",
-                          "power_menu"])
+                         ["launcher_settings", "native_settings"])
 
     def test_a_row_with_no_string_is_reported(self):
         with self.assertRaisesRegex(AssertionError, r"R\.string\.not_a_string"):

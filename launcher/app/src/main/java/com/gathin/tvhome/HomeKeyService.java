@@ -390,6 +390,18 @@ public class HomeKeyService extends AccessibilityService {
         if (service != null) service.performGlobalAction(GLOBAL_ACTION_POWER_DIALOG);
     }
 
+    /** Turn off / Put the TV to sleep. */
+    static void sleep() {
+        HomeKeyService service = running;
+        if (service != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                service.performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN);
+            } else {
+                service.performGlobalAction(GLOBAL_ACTION_POWER_DIALOG);
+            }
+        }
+    }
+
     static boolean powerOnRedirect(String liveTv, CharSequence pkg, long now, long armedUntil) {
         return !liveTv.isEmpty() && pkg != null && liveTv.contentEquals(pkg) && now < armedUntil;
     }

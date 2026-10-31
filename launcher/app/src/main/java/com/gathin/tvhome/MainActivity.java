@@ -180,6 +180,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private View clockBlock;
     private View btnInputs;
     private View btnCast;
+    private View btnPower;
     private boolean restoreKeyServices;
     /** config show_inputs_pill: false keeps the Inputs pill hidden even when the TV has inputs. */
     private boolean showInputsPill = true;
@@ -789,6 +790,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (btnCast != null) {
             btnCast.setOnClickListener(v -> showAirPlayCastMenu());
         }
+        btnPower = findViewById(R.id.btnPower);
+        if (btnPower != null) {
+            btnPower.setOnClickListener(v -> showPowerMenu());
+        }
         if (!cfg.showNetworkPill) btnWifi.setVisibility(View.GONE);
         showInputsPill = cfg.showInputsPill;
         showInputsMenuRow = cfg.showInputsPill;
@@ -805,6 +810,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         setupTopButtonExpansion((TextView) btnVpn);
         setupTopButtonExpansion((TextView) btnLibraryTop);
         setupTopButtonExpansion((TextView) btnSettings);
+        if (btnPower instanceof TextView) setupTopButtonExpansion((TextView) btnPower);
         addTopBarApps(cfg.topBarApps, cfg.launchActions);
         iconOnlyButtons = cfg.iconOnlyButtons;
         topMenu = cfg.topMenu;
@@ -823,6 +829,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             showInputsPill = false;
             btnInputs.setVisibility(View.GONE);
             if (btnCast != null) btnCast.setVisibility(View.GONE);
+            if (btnPower != null) btnPower.setVisibility(View.GONE);
             btnWifi.setVisibility(View.GONE);
             ((TextView) btnSettings).setText(R.string.settings);
             ((TextView) btnSettings).setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_settings, 0, 0, 0);
@@ -865,8 +872,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 return true;
             }
             int firstButton = btnInputs.getVisibility() == View.VISIBLE ? R.id.btnInputs : firstTopButton().getId();
-            int leftButton = rtlMenuBar ? R.id.btnSettings : firstButton;
-            int rightButton = rtlMenuBar ? firstButton : R.id.btnSettings;
+            int lastButton = btnPower != null && btnPower.getVisibility() == View.VISIBLE ? R.id.btnPower : R.id.btnSettings;
+            int leftButton = rtlMenuBar ? lastButton : firstButton;
+            int rightButton = rtlMenuBar ? firstButton : lastButton;
             if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) return v.getId() == leftButton;
             return keyCode == KeyEvent.KEYCODE_DPAD_RIGHT && v.getId() == rightButton;
         };
@@ -875,11 +883,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnWifi.setOnKeyListener(pillKeys);
         btnVpn.setOnKeyListener(pillKeys);
         btnSettings.setOnKeyListener(pillKeys);
+        if (btnPower != null) btnPower.setOnKeyListener(pillKeys);
         btnReorder.setOnKeyListener(pillKeys);
         btnLibraryTop.setOnKeyListener(pillKeys);
         for (View button : topAppButtons) button.setOnKeyListener(pillKeys);
         if (advancedEffects) {
             List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnReorder, btnCast, btnWifi, btnVpn, btnLibraryTop, btnSettings));
+            if (btnPower != null) pills.add(btnPower);
             pills.addAll(topAppButtons);
             for (View button : pills) {
                 View.OnFocusChangeListener prevFocus = button.getOnFocusChangeListener();
@@ -3896,7 +3906,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         Toast.makeText(this, R.string.not_available, Toast.LENGTH_SHORT).show();
     }
 
-    /** The 3-line menu on top right: Native Settings, Launcher Settings, Module Cards, Dock Edit, Reorder, Power Menu. */
+    /** The 3-line menu on top right: Native Settings, Launcher Settings. */
     private void showSettingsMenu() {
         View anchor = findViewById(R.id.btnSettings);
         View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
@@ -3906,18 +3916,72 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         addSettingsMenuRow(rows, popup, R.string.launcher_settings, () -> startActivityForResult(
                 new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST));
         addSettingsMenuRow(rows, popup, R.string.native_settings, this::openNativeSettings);
-        if (moduleCards) addSettingsMenuRow(rows, popup, R.string.module_cards, this::showModuleCards);
-        if (dockRow) addSettingsMenuRow(rows, popup, R.string.dock_edit, this::startDockEdit);
-        addSettingsMenuRow(rows, popup, R.string.reorder, this::toggleReorder);
-        if (HomeKeyService.canOpenPowerMenu()) {
-            addSettingsMenuRow(rows, popup, R.string.power_menu, HomeKeyService::openPowerMenu);
-        }
 
         panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
         popup.setWidth(Math.max((int) (200 * density), panel.getMeasuredWidth()));
         dropIn(popup, panel, anchor, getResources().getBoolean(R.bool.rtl_menu_bar)
                 ? Gravity.START : Gravity.END);
         rows.getChildAt(0).requestFocus();
+    }
+
+    /** Power menu: Turn off (sleep) and Restart. */
+    private void showPowerMenu() {
+        View anchor = (btnPower != null && btnPower.getVisibility() == View.VISIBLE) ? btnPower : findViewById(R.id.btnSettings);
+        if (anchor == null) anchor = root;
+        View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
+        LinearLayout rows = panel.findViewById(R.id.rows);
+        PopupWindow popup = glassPopup(panel, (int) (180 * density));
+
+        addPowerMenuRow(rows, popup, R.drawable.ic_power, R.string.power_turn_off, () -> {
+            if (HomeKeyService.canOpenPowerMenu()) {
+                HomeKeyService.sleep();
+            } else {
+                Toast.makeText(this, R.string.not_available, Toast.LENGTH_SHORT).show();
+            }
+        });
+        addPowerMenuRow(rows, popup, R.drawable.ic_restart, R.string.power_restart, () -> {
+            if (HomeKeyService.canOpenPowerMenu()) {
+                HomeKeyService.openPowerMenu();
+            } else {
+                Toast.makeText(this, R.string.not_available, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        popup.setWidth(Math.max((int) (180 * density), panel.getMeasuredWidth()));
+        dropIn(popup, panel, anchor, getResources().getBoolean(R.bool.rtl_menu_bar)
+                ? Gravity.START : Gravity.END);
+        if (rows.getChildCount() > 0) {
+            rows.getChildAt(0).requestFocus();
+        }
+    }
+
+    private void addPowerMenuRow(LinearLayout rows, PopupWindow popup, int iconRes, int titleRes, Runnable action) {
+        View row = getLayoutInflater().inflate(R.layout.item_input, rows, false);
+        ((ImageView) row.findViewById(R.id.icon)).setImageResource(iconRes);
+        row.findViewById(R.id.dot).setVisibility(View.GONE);
+        row.findViewById(R.id.status).setVisibility(View.GONE);
+        ((TextView) row.findViewById(R.id.title)).setText(titleRes);
+        row.setOnClickListener(v -> {
+            popup.dismiss();
+            action.run();
+        });
+        final boolean[] pressed = {false};
+        row.setOnKeyListener((v, code, event) -> {
+            if (code != KeyEvent.KEYCODE_DPAD_CENTER && code != KeyEvent.KEYCODE_ENTER) return false;
+            if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                if (event.getRepeatCount() == 0) pressed[0] = true;
+                return true;
+            }
+            boolean activate = pressed[0];
+            pressed[0] = false;
+            if (activate) {
+                popup.dismiss();
+                action.run();
+            }
+            return true;
+        });
+        rows.addView(row);
     }
 
     /** A tile configured with launch_actions "input:<id>" (config.xml): switch to that TV input directly,

@@ -341,6 +341,14 @@
                 android:orientation="horizontal">
 
                 <TextView
+                    android:id="@+id/btnPower"
+                    style="@style/TopButtonIcon"
+                    android:layout_gravity="center_vertical"
+                    android:contentDescription="@string/power"
+                    android:drawableStart="@drawable/ic_power"
+                    android:nextFocusDown="@+id/grid" />
+
+                <TextView
                     android:id="@+id/btnSettings"
                     style="@style/TopButtonIcon"
                     android:layout_gravity="center_vertical"
