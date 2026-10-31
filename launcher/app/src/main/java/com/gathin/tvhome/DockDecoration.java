@@ -96,8 +96,8 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
             if (pos < 0 || (!bandAll && pos >= dockSize)) continue;
             RecyclerView.ViewHolder vh = parent.getChildViewHolder(child);
             View card = vh instanceof AppAdapter.Holder ? ((AppAdapter.Holder) vh).card : child.findViewById(R.id.card);
-            if (card == null) continue;
-            float l = child.getLeft() + card.getLeft();
+            if (card == null || card.getVisibility() != View.VISIBLE || child.getVisibility() != View.VISIBLE) continue;
+            float l = child.getLeft() + card.getLeft() + child.getTranslationX();
             float t = child.getTop() + card.getTop() + child.getTranslationY();
             float r = l + card.getWidth();
             float b = t + card.getHeight();
@@ -111,27 +111,17 @@ public class DockDecoration extends RecyclerView.ItemDecoration {
         }
         if (!any) return;
         float pad = 14 * density;
-        // The band can only draw inside the grid, and the first and last dock tiles sit 12dp in from its
-        // edges: a full 14dp at the sides sliced the rounded ends flat (#454). Keep the sides, with the
-        // 1dp edge line, inside the grid; the top and bottom have room.
-        // 22dp at the sides (the grid's 10dp padding makes room): a focused first or last tile grows about 7dp
-        // outwards and still keeps about the band's top margin from its rounded end.
-        float sidePad = 22 * density;
-        float side = Math.max(0f, Math.min(sidePad, Math.min(rect.left, parent.getWidth() - rect.right) - density));
-        float radius = AppAdapter.cornerRadius(cardWidth, density);
+        float cardRadius = AppAdapter.cornerRadius(cardWidth, density);
         if (evenPadding) {
             // The same padding on all four sides, so the band's corners are concentric with the tiles' everywhere.
             int inner = parent.getWidth() - parent.getPaddingLeft() - parent.getPaddingRight();
             // A single row's tiles can run off the screen, so only its top limits the padding; its ends are clamped below.
             float room = (singleRow ? rect.top : Math.min(rect.top, Math.min(rect.left, parent.getWidth() - rect.right))) - density;
-            float even = evenPaddingPx(inner, dockSize, cardWidth, room);
-            rect.inset(-even, -even);
-            radius = radiusPx(radius, even);
-        } else {
-            // dock_even_padding off: the band as before, with its fixed 26 dp corners.
-            rect.inset(singleRow ? -sidePad : -side, -pad);
-            radius = 26 * density;
+            pad = evenPaddingPx(inner, dockSize, cardWidth, room);
         }
+        // Equidistant padding on all 4 sides so distance from apps on side equals distance from top/bottom.
+        rect.inset(-pad, -pad);
+        float radius = radiusPx(cardRadius, pad);
         if (singleRow) {
             // Tiles past the screen's edge: the band stops at the grid's edge with its rounded end instead of being
             // sliced square there.
