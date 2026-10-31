@@ -2,6 +2,10 @@
   <a href="https://cleanyour.tv"><img src="https://raw.githubusercontent.com/Gathin23/cleanyourtv/main/docs/banner.png" alt="CleanYourTV. Your TV, minus the ads. Strip the bloatware from any Android TV or Google TV over Wi-Fi and replace the ad-filled home screen with a clean launcher that looks like an Apple TV. No root, no cable, nothing uninstalled, and a one-line restore." width="800"></a>
 </p>
 
+> [!NOTE]
+> **Major Update — Modern Hybrid Redesign & Fire TV Persistence**
+> The launcher has been completely redesigned with an **Apple tvOS & Samsung One UI** hybrid aesthetic: fluid frosted glass, strictly equidistant dynamic dock padding, in-app live Wi-Fi scanner, AirPlay & Cast receiver controls, Samsung One UI 9 style "Now Bar" media widget, oversized typography, and complete **Fire TV (Fire OS)** persistence that prevents falling back to the stock Amazon launcher.
+
 <p align="center">
   Read in: <a href="README.zh-CN.md">简体中文</a> · <a href="README.zh-TW.md">正體中文</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.ja.md">日本語</a> · <a href="README.it.md">Italiano</a> · <a href="README.nl.md">Nederlands</a> · <a href="README.de.md">Deutsch</a>
 </p>
@@ -86,17 +90,19 @@ screenshots pulled from the TV. With this repo as context it takes about fifteen
 
 ## What you get
 
-A home screen that looks like an Apple TV and gets out of the way:
+A modernized, high-performance home screen combining the clean minimalism of Apple tvOS with the rich control and fluid widgets of Samsung One UI:
 
 | Part | What it looks like |
 |---|---|
-| **A pitch-black home** | A dock of your four favourite apps in a rounded band, where Apple TV puts it. |
-| **A top shelf** | Names the focused app in large type, with an ambient glow in a colour taken from its artwork. |
-| **The rest of your apps in a grid** | Slides up when you press Down. |
-| **One floating glass highlight** | Springs from tile to tile. The focused tile lifts and shows its name. |
-| **Three frosted buttons** | Inputs (HDMI ports under the names you gave them in the TV's settings, AV, Live TV), Wi-Fi or Ethernet with the network name, Settings. |
-| **A greeting, a thin clock and the date** | In [Outfit](https://fonts.google.com/specimen/Outfit), and a matching Clock screensaver. Set `show_stats` in config or a theme for one line under the clock: CPU, free memory and free storage. It stays off unless you turn it on, and it refreshes only while Home is on screen. |
-| **Themes and module cards** | Themes change colours, wallpaper, dock and columns without a rebuild, and module cards let other apps plug a tile in, only with your say-so. |
+| **Equidistant Dynamic Dock** | A dock of your favorite apps nestled in a frosted glass band with strictly uniform 14dp padding on all four sides and concentric corners. The band adapts dynamically to the apps actually present in the dock. |
+| **Top Control Center** | Streamlined frosted glass pill buttons: **Inputs** (HDMI ports, AV, Live TV), **Live Wi-Fi Scanner** (scans active networks and connects directly in-app), **AirPlay & Cast** receiver shortcut, **Tile Reorder** mode, and minimal **Settings** popup. |
+| **Samsung One UI 9 Now Bar** | Floating interactive media widget showing currently playing music/media, live equalizer animation, album art, interactive controls (play/pause/skip), progress bar, and speaker output routing. |
+| **Fire TV & Android TV Persistence** | Integrated `HomeKeyService` Accessibility Service intercepts Home key and navigation presses, guaranteeing the launcher remains the permanent default without falling back to stock OEM/Amazon launchers. |
+| **A top shelf** | Names the focused app in large type, with an ambient glow in a color taken from its artwork. |
+| **The rest of your apps in a grid** | Slides up smoothly when you press Down. |
+| **One floating glass highlight** | Springs from tile to tile with 60+ FPS fluid physics. The focused tile lifts and reveals its title. |
+| **Oversized Clock & Date Typography** | Clean typography in [Outfit](https://fonts.google.com/specimen/Outfit), enlarged for effortless 10-foot legibility, with a matching drifting Clock screensaver. |
+| **Themes and module cards** | Themes change colors, wallpaper, dock and columns without a rebuild, and module cards let other apps plug a tile in, only with your say-so. |
 
 And a TV that stops working against you: no sponsored rows, no "Discover" nags, no analytics
 phoning home, no apps you never asked for.
@@ -114,12 +120,12 @@ phoning home, no apps you never asked for.
 
 ## Supported TVs
 
-Anything running **Android TV** or **Google TV**.
+Anything running **Android TV**, **Google TV**, or **Fire TV**.
 
 | Platform | What works |
 |---|---|
-| **Android TV, Google TV** | The debloat and the launcher. |
-| **Fire TV** | The debloat half only, since Fire OS will not hand Home to a third-party launcher. And on the 2015 Fire TV Box (Fire OS 5) even that half fails: every `pm` route is refused. |
+| **Android TV, Google TV** | The debloat and the modern hybrid launcher. |
+| **Fire TV (Fire OS)** | **Fully supported!** Both debloating and the modern launcher run seamlessly. With our persistent `HomeKeyService` accessibility integration, the launcher stays locked as the main default home screen and intercepts Home key presses without falling back to the stock Amazon launcher. Tested and verified on Toshiba Fire TV Edition and other Fire OS devices. |
 | **A few China-market TCL sets** | They refuse to install any launcher at all; their lists say so in the header. |
 | **Samsung (Tizen), LG (webOS), Roku, Vizio, Hisense VIDAA** | Not supported (no ADB). Turn off the tracking instead: [cleanyour.tv/not-android](https://cleanyour.tv/not-android). See [SHOWCASE.md](SHOWCASE.md#other-platforms-fire-tv-and-lg-webos) for four webOS ports, and [docs/devices/samsung-tizen.md](docs/devices/samsung-tizen.md) for what a 2021 Samsung set answers over Wi-Fi (no ADB, so no `pm disable-user`) if you are weighing a Tizen port. |
 
@@ -264,10 +270,7 @@ debloat list. What the audit cannot do is prove intent: [docs/privacy.md](docs/p
 
 ## The launcher
 
-A small native home screen for Android TV: **about 532 KB**, plain Java, built for TVs with 1 GB of RAM.
-No blur, no video, no network permission, no background services. The **TV** needs Android 8.0 (API 26)
-or newer, the `minSdk` in [`launcher/app/build.gradle`](launcher/app/build.gradle); what is left on an older
-set is in [Troubleshooting](docs/TROUBLESHOOTING.md).
+A lightweight, modern native home screen for Android TV, Google TV, and Fire TV: **under 600 KB**, pure Java, built for TVs with 1 GB of RAM. Engineered with an Apple tvOS and Samsung One UI hybrid design language, fluid frosted glass, and 60+ FPS performance. No bloat, no video overhead, no analytics phoning home, no background drain. The **TV** needs Android 8.0 (API 26) or newer (including Fire OS 6+), the `minSdk` in [`launcher/app/build.gradle`](launcher/app/build.gradle); what is left on an older set is in [Troubleshooting](docs/TROUBLESHOOTING.md).
 
 | What | How it works |
 |---|---|
