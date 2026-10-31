@@ -37,6 +37,7 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 import android.net.Uri;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -86,6 +87,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -177,6 +179,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private TextView greeting;
     private View clockBlock;
     private View btnInputs;
+    private View btnCast;
     /** config show_inputs_pill: false keeps the Inputs pill hidden even when the TV has inputs. */
     private boolean showInputsPill = true;
     private TextView btnWifi;
@@ -787,6 +790,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnReorder = findViewById(R.id.btnReorder);
         btnReorder.setOnClickListener(v -> toggleReorder());
         btnReorder.setVisibility(cfg.reorderButton ? View.VISIBLE : View.GONE);
+        btnCast = findViewById(R.id.btnCast);
+        if (btnCast != null) {
+            btnCast.setOnClickListener(v -> showAirPlayCastMenu());
+        }
         if (!cfg.showNetworkPill) btnWifi.setVisibility(View.GONE);
         showInputsPill = cfg.showInputsPill;
         showInputsMenuRow = cfg.showInputsPill;
@@ -798,6 +805,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnLibraryTop.setVisibility(cfg.libraryButton && cfg.appLibrary ? View.VISIBLE : View.GONE);
         setupTopButtonExpansion((TextView) btnInputs);
         setupTopButtonExpansion((TextView) btnReorder);
+        if (btnCast instanceof TextView) setupTopButtonExpansion((TextView) btnCast);
         setupTopButtonExpansion((TextView) btnWifi);
         setupTopButtonExpansion((TextView) btnVpn);
         setupTopButtonExpansion((TextView) btnLibraryTop);
@@ -819,6 +827,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             // label up to date, which the menu's Wi-Fi row shows.
             showInputsPill = false;
             btnInputs.setVisibility(View.GONE);
+            if (btnCast != null) btnCast.setVisibility(View.GONE);
             btnWifi.setVisibility(View.GONE);
             ((TextView) btnSettings).setText(R.string.settings);
             ((TextView) btnSettings).setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_settings, 0, 0, 0);
@@ -867,6 +876,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             return keyCode == KeyEvent.KEYCODE_DPAD_RIGHT && v.getId() == rightButton;
         };
         btnInputs.setOnKeyListener(pillKeys);
+        if (btnCast != null) btnCast.setOnKeyListener(pillKeys);
         btnWifi.setOnKeyListener(pillKeys);
         btnVpn.setOnKeyListener(pillKeys);
         btnSettings.setOnKeyListener(pillKeys);
@@ -874,7 +884,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnLibraryTop.setOnKeyListener(pillKeys);
         for (View button : topAppButtons) button.setOnKeyListener(pillKeys);
         if (advancedEffects) {
-            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnWifi, btnVpn, btnReorder, btnLibraryTop, btnSettings));
+            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnReorder, btnCast, btnWifi, btnVpn, btnLibraryTop, btnSettings));
             pills.addAll(topAppButtons);
             for (View button : pills) {
                 View.OnFocusChangeListener prevFocus = button.getOnFocusChangeListener();
@@ -3024,6 +3034,173 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
+    private void showAirPlayCastMenu() {
+        View anchor = (btnCast != null && btnCast.getVisibility() == View.VISIBLE) ? btnCast : findViewById(R.id.btnSettings);
+        if (anchor == null) anchor = root;
+        View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
+        LinearLayout rows = panel.findViewById(R.id.rows);
+        PopupWindow popup = glassPopup(panel, (int) (260 * density));
+
+        // 1. Header with AirPlay / Cast title and status
+        View headerRow = getLayoutInflater().inflate(R.layout.item_input, rows, false);
+        ((ImageView) headerRow.findViewById(R.id.icon)).setImageResource(R.drawable.ic_airplay);
+        ((TextView) headerRow.findViewById(R.id.title)).setText(R.string.airplay_cast);
+        TextView headerStatus = headerRow.findViewById(R.id.status);
+        headerStatus.setText("Ready");
+        headerStatus.setVisibility(View.VISIBLE);
+        headerRow.findViewById(R.id.dot).setVisibility(View.VISIBLE);
+        headerRow.setOnClickListener(v -> {
+            popup.dismiss();
+            showAirPlayDialog();
+        });
+        rows.addView(headerRow);
+
+        addSeparator(rows);
+
+        // 2. Apple AirPlay & HomeKit
+        View airplayRow = getLayoutInflater().inflate(R.layout.item_input, rows, false);
+        ((ImageView) airplayRow.findViewById(R.id.icon)).setImageResource(R.drawable.ic_airplay);
+        ((TextView) airplayRow.findViewById(R.id.title)).setText(R.string.airplay_homekit);
+        TextView aStatus = airplayRow.findViewById(R.id.status);
+        aStatus.setText("Apple iOS / Mac");
+        aStatus.setVisibility(View.VISIBLE);
+        airplayRow.findViewById(R.id.dot).setVisibility(View.GONE);
+        airplayRow.setOnClickListener(v -> {
+            popup.dismiss();
+            showAirPlayDialog();
+        });
+        rows.addView(airplayRow);
+
+        // 3. Screen Mirroring (Miracast / Android / Windows)
+        View mirrorRow = getLayoutInflater().inflate(R.layout.item_input, rows, false);
+        ((ImageView) mirrorRow.findViewById(R.id.icon)).setImageResource(R.drawable.ic_cast);
+        ((TextView) mirrorRow.findViewById(R.id.title)).setText(R.string.screen_mirroring);
+        TextView mStatus = mirrorRow.findViewById(R.id.status);
+        mStatus.setText("Smart View • PC");
+        mStatus.setVisibility(View.VISIBLE);
+        mirrorRow.findViewById(R.id.dot).setVisibility(View.GONE);
+        mirrorRow.setOnClickListener(v -> {
+            popup.dismiss();
+            Intent[] mirrorIntents = new Intent[] {
+                new Intent("android.settings.WIFI_DISPLAY_SETTINGS"),
+                new Intent("com.amazon.device.settings.action.DISPLAY_AND_SOUNDS"),
+                new Intent(Settings.ACTION_CAST_SETTINGS)
+            };
+            boolean launched = false;
+            for (Intent intent : mirrorIntents) {
+                try {
+                    startActivity(intent);
+                    launched = true;
+                    break;
+                } catch (Exception ignored) {}
+            }
+            if (!launched) {
+                Toast.makeText(this, "Screen Mirroring is active. Connect from your device.", Toast.LENGTH_LONG).show();
+            }
+        });
+        rows.addView(mirrorRow);
+
+        // 4. NetMirror TV (if installed)
+        PackageManager pm = getPackageManager();
+        Intent netMirror = pm.getLeanbackLaunchIntentForPackage("app.netmirror.newtv");
+        if (netMirror == null) netMirror = pm.getLaunchIntentForPackage("app.netmirror.newtv");
+        if (netMirror != null) {
+            final Intent launchIntent = netMirror;
+            View netMirrorRow = getLayoutInflater().inflate(R.layout.item_input, rows, false);
+            ((ImageView) netMirrorRow.findViewById(R.id.icon)).setImageResource(R.drawable.ic_open_in_new);
+            ((TextView) netMirrorRow.findViewById(R.id.title)).setText("NetMirror TV");
+            TextView nmStatus = netMirrorRow.findViewById(R.id.status);
+            nmStatus.setText("Receiver App");
+            nmStatus.setVisibility(View.VISIBLE);
+            netMirrorRow.findViewById(R.id.dot).setVisibility(View.GONE);
+            netMirrorRow.setOnClickListener(v -> {
+                popup.dismiss();
+                open(launchIntent);
+            });
+            rows.addView(netMirrorRow);
+        }
+
+        addSeparator(rows);
+
+        // 5. Display & Casting Settings
+        View settingsRow = getLayoutInflater().inflate(R.layout.item_input, rows, false);
+        ((ImageView) settingsRow.findViewById(R.id.icon)).setImageResource(R.drawable.ic_settings);
+        ((TextView) settingsRow.findViewById(R.id.title)).setText(R.string.settings);
+        TextView sStatus = settingsRow.findViewById(R.id.status);
+        sStatus.setText("Display & Sounds");
+        sStatus.setVisibility(View.VISIBLE);
+        settingsRow.findViewById(R.id.dot).setVisibility(View.GONE);
+        settingsRow.setOnClickListener(v -> {
+            popup.dismiss();
+            open(systemIntent(Settings.ACTION_DISPLAY_SETTINGS));
+        });
+        rows.addView(settingsRow);
+
+        panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        popup.setWidth(Math.max((int) (260 * density), panel.getMeasuredWidth()));
+        dropIn(popup, panel, anchor, getResources().getBoolean(R.bool.rtl_menu_bar) ? Gravity.START : Gravity.END);
+        rows.getChildAt(0).requestFocus();
+    }
+
+    private void showAirPlayDialog() {
+        View panel = getLayoutInflater().inflate(R.layout.dialog_airplay, root, false);
+        TextView body = panel.findViewById(R.id.body);
+        TextView btnDone = panel.findViewById(R.id.btnDone);
+        TextView btnSettings = panel.findViewById(R.id.btnSettings);
+
+        WifiManager wm = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        String ssid = null;
+        if (wm != null && wm.isWifiEnabled()) {
+            WifiInfo info = wm.getConnectionInfo();
+            if (info != null) ssid = info.getSSID();
+            if (ssid != null && ssid.startsWith("\"") && ssid.endsWith("\"") && ssid.length() >= 2) {
+                ssid = ssid.substring(1, ssid.length() - 1);
+            }
+        }
+        String wifiText = TextUtils.isEmpty(ssid) || "<unknown ssid>".equals(ssid) ? "the same Wi-Fi network" : "Wi-Fi: \"" + ssid + "\"";
+        body.setText("AirPlay is ready on this TV.\n\n"
+                + "1. Connect your iPhone, iPad, or Mac to " + wifiText + ".\n"
+                + "2. Open Control Center on your Apple device.\n"
+                + "3. Tap Screen Mirroring or AirPlay and select this TV.\n"
+                + "4. Stream your video, photos, presentations, or audio directly.");
+
+        final Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(panel);
+        Window w = dialog.getWindow();
+        if (w != null) {
+            w.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            w.setLayout((int) (480 * density), ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+
+        btnDone.setOnClickListener(v -> dialog.dismiss());
+        PackageManager pm = getPackageManager();
+        Intent netMirror = pm.getLeanbackLaunchIntentForPackage("app.netmirror.newtv");
+        if (netMirror == null) netMirror = pm.getLaunchIntentForPackage("app.netmirror.newtv");
+        if (netMirror != null) {
+            final Intent nm = netMirror;
+            btnSettings.setText("NetMirror TV");
+            btnSettings.setOnClickListener(v -> {
+                dialog.dismiss();
+                open(nm);
+            });
+        } else {
+            btnSettings.setText(R.string.settings);
+            btnSettings.setOnClickListener(v -> {
+                dialog.dismiss();
+                open(systemIntent(Settings.ACTION_DISPLAY_SETTINGS));
+            });
+        }
+
+        panel.setAlpha(0f);
+        panel.setScaleX(0.92f);
+        panel.setScaleY(0.92f);
+        dialog.show();
+        panel.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(200)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator(1.6f)).start();
+        btnDone.requestFocus();
+    }
+
     /**
      * The network pill opens the VPN app when one is configured and installed, otherwise Wi-Fi settings. With
      * vpn_pill the VPN app has its own pill, so this one always opens Wi-Fi settings.
@@ -3060,7 +3237,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         });
         rows.addView(toggleRow);
 
-        // 2. If Wi-Fi is enabled, show current connection and configured networks
+        // 2. If Wi-Fi is enabled, show current connection and live scanned available networks
         if (wifiEnabled && wm != null) {
             WifiInfo info = wm.getConnectionInfo();
             String currentSsid = info != null ? info.getSSID() : null;
@@ -3082,6 +3259,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 rows.addView(connectedRow);
             }
 
+            // Map saved/configured network IDs by SSID
+            Map<String, Integer> configuredNetworks = new HashMap<>();
             try {
                 List<android.net.wifi.WifiConfiguration> configs = wm.getConfiguredNetworks();
                 if (configs != null) {
@@ -3090,28 +3269,62 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                         if (s != null && s.startsWith("\"") && s.endsWith("\"") && s.length() >= 2) {
                             s = s.substring(1, s.length() - 1);
                         }
-                        if (s != null && !s.equals(currentSsid) && !"<unknown ssid>".equals(s)) {
-                            final int netId = config.networkId;
-                            final String targetSsid = s;
-                            View savedRow = getLayoutInflater().inflate(R.layout.item_input, rows, false);
-                            ((ImageView) savedRow.findViewById(R.id.icon)).setImageResource(R.drawable.ic_wifi);
-                            ((TextView) savedRow.findViewById(R.id.title)).setText(targetSsid);
-                            savedRow.findViewById(R.id.status).setVisibility(View.GONE);
-                            savedRow.findViewById(R.id.dot).setVisibility(View.GONE);
-                            savedRow.setOnClickListener(v -> {
-                                popup.dismiss();
-                                try {
-                                    wm.disconnect();
-                                    wm.enableNetwork(netId, true);
-                                    wm.reconnect();
-                                    Toast.makeText(this, "Connecting to " + targetSsid + "...", Toast.LENGTH_SHORT).show();
-                                } catch (Exception ignored) {}
-                            });
-                            rows.addView(savedRow);
-                        }
+                        if (!TextUtils.isEmpty(s)) configuredNetworks.put(s, config.networkId);
                     }
                 }
             } catch (SecurityException ignored) {}
+
+            try { wm.startScan(); } catch (Exception ignored) {}
+
+            List<ScanResult> scanResults = null;
+            try {
+                scanResults = wm.getScanResults();
+            } catch (SecurityException ignored) {}
+
+            Map<String, ScanResult> available = new LinkedHashMap<>();
+            if (scanResults != null) {
+                List<ScanResult> sorted = new ArrayList<>(scanResults);
+                Collections.sort(sorted, (a, b) -> Integer.compare(b.level, a.level));
+                for (ScanResult sr : sorted) {
+                    String s = sr.SSID;
+                    if (TextUtils.isEmpty(s) || "<unknown ssid>".equals(s)) continue;
+                    if (s.equals(currentSsid)) continue;
+                    if (!available.containsKey(s)) {
+                        available.put(s, sr);
+                    }
+                }
+            }
+
+            if (!available.isEmpty()) {
+                for (ScanResult sr : available.values()) {
+                    final String targetSsid = sr.SSID;
+                    final boolean isSaved = configuredNetworks.containsKey(targetSsid);
+                    final Integer netId = configuredNetworks.get(targetSsid);
+                    View networkRow = getLayoutInflater().inflate(R.layout.item_input, rows, false);
+                    ((ImageView) networkRow.findViewById(R.id.icon)).setImageResource(R.drawable.ic_wifi);
+                    ((TextView) networkRow.findViewById(R.id.title)).setText(targetSsid);
+                    TextView nStatus = networkRow.findViewById(R.id.status);
+                    nStatus.setText(isSaved ? getString(R.string.saved) : getString(R.string.available));
+                    nStatus.setVisibility(View.VISIBLE);
+                    networkRow.findViewById(R.id.dot).setVisibility(View.GONE);
+                    networkRow.setOnClickListener(v -> {
+                        popup.dismiss();
+                        if (isSaved && netId != null) {
+                            try {
+                                wm.disconnect();
+                                wm.enableNetwork(netId, true);
+                                wm.reconnect();
+                                Toast.makeText(this, "Connecting to " + targetSsid + "...", Toast.LENGTH_SHORT).show();
+                            } catch (Exception ignored) {
+                                open(systemIntent(Settings.ACTION_WIFI_SETTINGS));
+                            }
+                        } else {
+                            open(systemIntent(Settings.ACTION_WIFI_SETTINGS));
+                        }
+                    });
+                    rows.addView(networkRow);
+                }
+            }
         }
 
         addSeparator(rows);
@@ -3634,6 +3847,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         PopupWindow popup = glassPopup(panel, (int) (220 * density));
         // Inputs opens its own list once this one has closed.
         if (showInputsMenuRow) addInputRow(rows, popup, R.drawable.ic_input, getString(R.string.inputs), -1, () -> root.post(this::showInputs));
+        addInputRow(rows, popup, R.drawable.ic_airplay, getString(R.string.airplay_cast), -1, this::showAirPlayCastMenu);
         addInputRow(rows, popup, R.drawable.ic_wifi, getString(R.string.quick_network), -1, this::openNetworkPill);
         CharSequence network = wifiIconOnly ? btnWifi.getContentDescription() : btnWifi.getText();
         if (!TextUtils.isEmpty(network)) {
@@ -3686,6 +3900,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         LinearLayout rows = panel.findViewById(R.id.rows);
         PopupWindow popup = glassPopup(panel, (int) (200 * density));
         
+        addSettingsMenuRow(rows, popup, R.string.airplay_cast, this::showAirPlayCastMenu);
         addSettingsMenuRow(rows, popup, R.string.native_settings, this::openNativeSettings);
         addSettingsMenuRow(rows, popup, R.string.launcher_settings, () -> startActivityForResult(
                 new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST));

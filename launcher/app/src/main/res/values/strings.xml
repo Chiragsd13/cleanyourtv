@@ -14,6 +14,10 @@
     <string name="more_inputs">More inputs</string>
     <string name="airplay_homekit">AirPlay &amp; HomeKit</string>
     <string name="screen_mirroring">Screen Mirroring</string>
+    <string name="airplay_cast">AirPlay &amp; Cast</string>
+    <string name="saved">Saved</string>
+    <string name="available">Available</string>
+    <string name="scanning_networks">Scanning for networks…</string>
     <string name="good_morning">Good morning</string>
     <string name="good_afternoon">Good afternoon</string>
     <string name="good_evening">Good evening</string>
