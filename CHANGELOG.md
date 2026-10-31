@@ -36,6 +36,7 @@
   - Power menu modal launch, focus traversal, and dismissal.
   - Settings popup launch, navigation, and activity hand-off.
   - In-app dock focus tracking and cursor boundaries.
-- **Amazon Appstore Service Status Audit**:
-  - Investigated Amazon Appstore storefront issues on debloated devices.
-  - Confirmed that Amazon Appstore (`com.amazon.venezia`) relies on telemetry/catalog daemon services (`com.amazon.tahoe`, `com.amazon.vizzini.ftvcds`). When these background services are debloated, `com.amazon.venezia.ade.ADEHomeActivity` terminates immediately, and the app tile launches the local "Your Apps & Games" grid rather than a store catalog.
+- **Amazon Appstore Interception & Storefront Launch Fix**:
+  - **Interception Resolution**: Identified and resolved a false-positive detection in `HomeKeyService.java` where `com.amazon.venezia.ade.ADEHomeActivity` was matched by a generic `HomeActivity` substring filter and immediately redirected back to CleanYourTV home.
+  - **Storefront Client Exemption**: Explicitly exempted store clients (`com.amazon.venezia`, `com.google.android.finsky`, `com.android.vending`, `com.aurora.store`, `org.fdroid.fdroid`, `com.amazon.appmanager`) from home-capture redirection.
+  - **Direct Catalog Routing**: Updated `AppAdapter.java` to dispatch `com.amazon.venezia.ade.FEATURED_LAUNCH` when launching Amazon Appstore, opening the interactive storefront catalog directly rather than defaulting to the offline "Your Apps & Games" screen.

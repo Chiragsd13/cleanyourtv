@@ -319,7 +319,7 @@ public class HomeKeyService extends AccessibilityService {
             return;
         }
         // stock_home_redirect: redirect stock Amazon launcher home screens back to CleanYourTV,
-        // but preserve native settings, search, dialogs, and secondary screens.
+        // but preserve native settings, search, dialogs, Appstore, and secondary screens.
         CharSequence cls = event.getClassName();
         CharSequence pkg = event.getPackageName();
         if (cls != null) {
@@ -332,15 +332,14 @@ public class HomeKeyService extends AccessibilityService {
         }
         if (pkg != null) {
             String p = pkg.toString();
-            if (p.equals("com.amazon.tv.launcher") || p.equals("com.amazon.firehomestarter")
-                    || p.equals(stockHomePackage) || stockHome.contains(p)) {
-                openHome();
+            // Appstore and store clients must NEVER be redirected to Home
+            if (p.equals("com.amazon.venezia") || p.equals("com.google.android.finsky")
+                    || p.equals("com.android.vending") || p.equals("com.aurora.store")
+                    || p.equals("org.fdroid.fdroid") || p.equals("com.amazon.appmanager")) {
                 return;
             }
-        }
-        if (cls != null) {
-            String c = cls.toString();
-            if (stockHome.contains(c) || c.contains("HomeActivity") || c.contains("HomeStarterActivity")) {
+            if (p.equals("com.amazon.tv.launcher") || p.equals("com.amazon.firehomestarter")
+                    || p.equals(stockHomePackage) || stockHome.contains(p)) {
                 openHome();
                 return;
             }

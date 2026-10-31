@@ -550,6 +550,12 @@ public class AppAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             Intent byAction = LaunchActions.intent(e.pkg, action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             if (ctx.getPackageManager().resolveActivity(byAction, 0) != null) i = byAction;
         }
+        if ("com.amazon.venezia".equals(e.pkg)) {
+            Intent appstore = new Intent("com.amazon.venezia.ade.FEATURED_LAUNCH")
+                    .setPackage("com.amazon.venezia")
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (ctx.getPackageManager().resolveActivity(appstore, 0) != null) i = appstore;
+        }
         try {
             ctx.startActivity(i);
             if (cinematic) LastOpened.record(ctx, e.pkg);
