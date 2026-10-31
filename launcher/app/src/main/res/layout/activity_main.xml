@@ -852,14 +852,6 @@
                     android:nextFocusDown="@+id/grid" />
 
                 <TextView
-                    android:id="@+id/btnCast"
-                    style="@style/TopButtonIcon"
-                    android:layout_gravity="center_vertical"
-                    android:contentDescription="@string/airplay_cast"
-                    android:drawableStart="@drawable/ic_airplay"
-                    android:nextFocusDown="@+id/grid" />
-
-                <TextView
                     android:id="@+id/btnWifi"
                     style="@style/TopButtonIcon"
                     android:layout_gravity="center_vertical"

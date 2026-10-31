@@ -179,7 +179,6 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private TextView greeting;
     private View clockBlock;
     private View btnInputs;
-    private View btnCast;
     /** config show_inputs_pill: false keeps the Inputs pill hidden even when the TV has inputs. */
     private boolean showInputsPill = true;
     private TextView btnWifi;
@@ -790,10 +789,6 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnReorder = findViewById(R.id.btnReorder);
         btnReorder.setOnClickListener(v -> toggleReorder());
         btnReorder.setVisibility(cfg.reorderButton ? View.VISIBLE : View.GONE);
-        btnCast = findViewById(R.id.btnCast);
-        if (btnCast != null) {
-            btnCast.setOnClickListener(v -> showAirPlayCastMenu());
-        }
         if (!cfg.showNetworkPill) btnWifi.setVisibility(View.GONE);
         showInputsPill = cfg.showInputsPill;
         showInputsMenuRow = cfg.showInputsPill;
@@ -805,7 +800,6 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnLibraryTop.setVisibility(cfg.libraryButton && cfg.appLibrary ? View.VISIBLE : View.GONE);
         setupTopButtonExpansion((TextView) btnInputs);
         setupTopButtonExpansion((TextView) btnReorder);
-        if (btnCast instanceof TextView) setupTopButtonExpansion((TextView) btnCast);
         setupTopButtonExpansion((TextView) btnWifi);
         setupTopButtonExpansion((TextView) btnVpn);
         setupTopButtonExpansion((TextView) btnLibraryTop);
@@ -827,7 +821,6 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             // label up to date, which the menu's Wi-Fi row shows.
             showInputsPill = false;
             btnInputs.setVisibility(View.GONE);
-            if (btnCast != null) btnCast.setVisibility(View.GONE);
             btnWifi.setVisibility(View.GONE);
             ((TextView) btnSettings).setText(R.string.settings);
             ((TextView) btnSettings).setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_settings, 0, 0, 0);
@@ -876,7 +869,6 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             return keyCode == KeyEvent.KEYCODE_DPAD_RIGHT && v.getId() == rightButton;
         };
         btnInputs.setOnKeyListener(pillKeys);
-        if (btnCast != null) btnCast.setOnKeyListener(pillKeys);
         btnWifi.setOnKeyListener(pillKeys);
         btnVpn.setOnKeyListener(pillKeys);
         btnSettings.setOnKeyListener(pillKeys);
@@ -884,7 +876,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnLibraryTop.setOnKeyListener(pillKeys);
         for (View button : topAppButtons) button.setOnKeyListener(pillKeys);
         if (advancedEffects) {
-            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnReorder, btnCast, btnWifi, btnVpn, btnLibraryTop, btnSettings));
+            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnReorder, btnWifi, btnVpn, btnLibraryTop, btnSettings));
             pills.addAll(topAppButtons);
             for (View button : pills) {
                 View.OnFocusChangeListener prevFocus = button.getOnFocusChangeListener();
@@ -3035,13 +3027,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     private void showAirPlayCastMenu() {
-        View anchor = (btnCast != null && btnCast.getVisibility() == View.VISIBLE) ? btnCast : findViewById(R.id.btnSettings);
+        View anchor = findViewById(R.id.btnSettings);
         if (anchor == null) anchor = root;
         View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
         LinearLayout rows = panel.findViewById(R.id.rows);
         PopupWindow popup = glassPopup(panel, (int) (260 * density));
 
-        // 1. Header with AirPlay / Cast title and status
+        // 1. Header with AirPlay / Cast title and status (non-focusable header banner)
         View headerRow = getLayoutInflater().inflate(R.layout.item_input, rows, false);
         ((ImageView) headerRow.findViewById(R.id.icon)).setImageResource(R.drawable.ic_airplay);
         ((TextView) headerRow.findViewById(R.id.title)).setText(R.string.airplay_cast);
@@ -3049,10 +3041,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         headerStatus.setText("Ready");
         headerStatus.setVisibility(View.VISIBLE);
         headerRow.findViewById(R.id.dot).setVisibility(View.VISIBLE);
-        headerRow.setOnClickListener(v -> {
-            popup.dismiss();
-            showAirPlayDialog();
-        });
+        headerRow.setFocusable(false);
+        headerRow.setClickable(false);
+        headerRow.setBackground(null);
         rows.addView(headerRow);
 
         addSeparator(rows);
