@@ -179,6 +179,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private TextView greeting;
     private View clockBlock;
     private View btnInputs;
+    private View btnCast;
     private boolean restoreKeyServices;
     /** config show_inputs_pill: false keeps the Inputs pill hidden even when the TV has inputs. */
     private boolean showInputsPill = true;
@@ -790,7 +791,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         topButtons.setGravity(Gravity.CENTER_VERTICAL);
         btnReorder = findViewById(R.id.btnReorder);
         btnReorder.setOnClickListener(v -> toggleReorder());
-        btnReorder.setVisibility(cfg.reorderButton ? View.VISIBLE : View.GONE);
+        btnReorder.setVisibility(View.VISIBLE);
+        btnCast = findViewById(R.id.btnCast);
+        if (btnCast != null) {
+            btnCast.setOnClickListener(v -> showAirPlayCastMenu());
+        }
         if (!cfg.showNetworkPill) btnWifi.setVisibility(View.GONE);
         showInputsPill = cfg.showInputsPill;
         showInputsMenuRow = cfg.showInputsPill;
@@ -802,6 +807,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnLibraryTop.setVisibility(cfg.libraryButton && cfg.appLibrary ? View.VISIBLE : View.GONE);
         setupTopButtonExpansion((TextView) btnInputs);
         setupTopButtonExpansion((TextView) btnReorder);
+        if (btnCast instanceof TextView) setupTopButtonExpansion((TextView) btnCast);
         setupTopButtonExpansion((TextView) btnWifi);
         setupTopButtonExpansion((TextView) btnVpn);
         setupTopButtonExpansion((TextView) btnLibraryTop);
@@ -823,6 +829,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             // label up to date, which the menu's Wi-Fi row shows.
             showInputsPill = false;
             btnInputs.setVisibility(View.GONE);
+            if (btnCast != null) btnCast.setVisibility(View.GONE);
             btnWifi.setVisibility(View.GONE);
             ((TextView) btnSettings).setText(R.string.settings);
             ((TextView) btnSettings).setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_settings, 0, 0, 0);
@@ -871,6 +878,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             return keyCode == KeyEvent.KEYCODE_DPAD_RIGHT && v.getId() == rightButton;
         };
         btnInputs.setOnKeyListener(pillKeys);
+        if (btnCast != null) btnCast.setOnKeyListener(pillKeys);
         btnWifi.setOnKeyListener(pillKeys);
         btnVpn.setOnKeyListener(pillKeys);
         btnSettings.setOnKeyListener(pillKeys);
@@ -878,7 +886,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnLibraryTop.setOnKeyListener(pillKeys);
         for (View button : topAppButtons) button.setOnKeyListener(pillKeys);
         if (advancedEffects) {
-            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnReorder, btnWifi, btnVpn, btnLibraryTop, btnSettings));
+            List<View> pills = new ArrayList<>(Arrays.asList(btnInputs, btnReorder, btnCast, btnWifi, btnVpn, btnLibraryTop, btnSettings));
             pills.addAll(topAppButtons);
             for (View button : pills) {
                 View.OnFocusChangeListener prevFocus = button.getOnFocusChangeListener();
@@ -3030,7 +3038,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     private void showAirPlayCastMenu() {
-        View anchor = findViewById(R.id.btnSettings);
+        View anchor = (btnCast != null && btnCast.getVisibility() == View.VISIBLE) ? btnCast : findViewById(R.id.btnSettings);
         if (anchor == null) anchor = root;
         View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
         LinearLayout rows = panel.findViewById(R.id.rows);
@@ -3113,7 +3121,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
         popup.setWidth(Math.max((int) (260 * density), panel.getMeasuredWidth()));
         dropIn(popup, panel, anchor, getResources().getBoolean(R.bool.rtl_menu_bar) ? Gravity.START : Gravity.END);
-        rows.getChildAt(0).requestFocus();
+        if (rows.getChildCount() > 2) rows.getChildAt(2).requestFocus();
+        else rows.requestFocus();
     }
 
     private void showAirPlayDialog() {
@@ -3855,21 +3864,16 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         Toast.makeText(this, R.string.not_available, Toast.LENGTH_SHORT).show();
     }
 
-    /** The 3-line menu on top right: Native Settings, Launcher Settings, Reorder, Power Menu. */
+    /** Gear settings menu: Launcher settings and Native settings. */
     private void showSettingsMenu() {
         View anchor = findViewById(R.id.btnSettings);
         View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
         LinearLayout rows = panel.findViewById(R.id.rows);
         PopupWindow popup = glassPopup(panel, (int) (200 * density));
         
-        addSettingsMenuRow(rows, popup, R.string.airplay_cast, this::showAirPlayCastMenu);
-        addSettingsMenuRow(rows, popup, R.string.native_settings, this::openNativeSettings);
         addSettingsMenuRow(rows, popup, R.string.launcher_settings, () -> startActivityForResult(
                 new Intent(this, LauncherSettingsActivity.class), LAUNCHER_SETTINGS_REQUEST));
-        addSettingsMenuRow(rows, popup, R.string.reorder, this::toggleReorder);
-        if (HomeKeyService.canOpenPowerMenu()) {
-            addSettingsMenuRow(rows, popup, R.string.power_menu, HomeKeyService::openPowerMenu);
-        }
+        addSettingsMenuRow(rows, popup, R.string.native_settings, this::openNativeSettings);
 
         panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
         popup.setWidth(Math.max((int) (200 * density), panel.getMeasuredWidth()));
